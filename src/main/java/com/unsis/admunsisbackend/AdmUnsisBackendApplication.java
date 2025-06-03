@@ -1,4 +1,4 @@
-package com.unsis.ADM_UNSIS_backend;
+package com.unsis.admunsisbackend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,4 +1,4 @@
-package com.unsis.ADM_UNSIS_backend;
+package com.unsis.admunsisbackend;
 
 
 class AdmUnsisBackendApplicationTests {

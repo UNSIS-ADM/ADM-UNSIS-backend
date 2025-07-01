@@ -1,4 +1,4 @@
-/* 
+/*
 DROP DATABASE IF EXISTS applicants;
 CREATE DATABASE applicants;
 USE applicants;
@@ -40,40 +40,31 @@ CREATE TABLE applicants (
 
 USE applicants;
 
--- Limpiar tablas existentes
-DELETE FROM user_roles;
-DELETE FROM roles;
-DELETE FROM applicants;
-DELETE FROM users;
+-- Insertar roles
+ INSERT INTO roles (name, description) VALUES
+ ('ROLE_ADMIN', 'Administrador del sistema'),
+ ('ROLE_USER', 'Usuario regular'),
+ ('ROLE_APPLICANT', 'Aspirante');
 
--- Insertar roles (con el prefijo ROLE_)
-INSERT INTO roles (name, description) VALUES
-('ROLE_ADMIN', 'Administrador del sistema'),
-('ROLE_USER', 'Usuario regular'),
-('ROLE_APPLICANT', 'Aspirante');
+-- Insertar usuarios
+INSERT INTO users (username, password, full_name) VALUES
+('admin', 'admin123', 'Admin Principal'),
+('usuario', 'user123', 'Usuario Normal'),
+('aspirante', 'aspirante123', 'Aspirante Ejemplo');
 
--- Insertar usuarios (con contraseñas encriptadas)
-INSERT INTO users (username, password, full_name, active, created_at) VALUES
-('admin', '$2a$10$YYzfO.bg3YwEKEHWqmJ/PeDsSSz5zQnYvRbPiEZ1yTHwo0fWvM7XS', 'Admin Principal', true, NOW()),
-('usuario', '$2a$10$YYzfO.bg3YwEKEHWqmJ/PeDsSSz5zQnYvRbPiEZ1yTHwo0fWvM7XS', 'Usuario Normal', true, NOW()),
-('aspirante', '$2a$10$YYzfO.bg3YwEKEHWqmJ/PeDsSSz5zQnYvRbPiEZ1yTHwo0fWvM7XS', 'Aspirante Ejemplo', true, NOW());
+-- Asignar roles (ids: 1=ADMIN, 2=USER, 3=APPLICANT)
+INSERT INTO user_roles (user_id, role_id) VALUES
+(1, 1),  -- admin → ADMIN
+(2, 2),  -- usuario → USER
+(3, 3);  -- aspirante → APPLICANT
 
--- Asignar roles
-INSERT INTO user_roles (user_id, role_id)
-SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'admin' AND r.name = 'ROLE_ADMIN';
 
-INSERT INTO user_roles (user_id, role_id)
-SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'usuario' AND r.name = 'ROLE_USER';
 
-INSERT INTO user_roles (user_id, role_id)
-SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'aspirante' AND r.name = 'ROLE_APPLICANT';
+select * from roles;
 
--- Insertar datos de aspirante
-INSERT INTO applicants (curp, phone, exam_assigned, exam_room, status, file_number)
-SELECT 'XXXX000000XXXXXX00', '1234567890', false, NULL, 'PENDING', u.id
-FROM users u WHERE u.username = 'aspirante';
+select * from users;
+
+select * from user_roles;
+
+select * from applicants;
 */
-
---Java 21 gradlew clean build
-
-

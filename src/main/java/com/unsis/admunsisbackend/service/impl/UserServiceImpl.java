@@ -53,11 +53,9 @@ public class UserServiceImpl implements UserService {
     private ApplicantResponseDTO convertToApplicantDTO(User user, Applicant applicant) {
         ApplicantResponseDTO dto = new ApplicantResponseDTO();
         dto.setId(user.getId());
-        dto.setUsername(user.getUsername());
         dto.setFullName(user.getFullName());
         dto.setCurp(applicant.getCurp());
         dto.setPhone(applicant.getPhone());
-        dto.setExamAssigned(applicant.getExamAssigned());
         dto.setExamRoom(applicant.getExamRoom());
         dto.setExamDate(applicant.getExamDate());
         dto.setStatus(applicant.getStatus());

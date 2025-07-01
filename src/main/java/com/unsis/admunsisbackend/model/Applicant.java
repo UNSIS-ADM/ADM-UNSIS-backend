@@ -6,18 +6,17 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "applicants")
 public class Applicant {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Aquí no usamos el id de la tabla users directamente; usamos la relación 1-1:
-    @OneToOne
-    @JoinColumn(name = "file_number", referencedColumnName = "id")
-    private User user;
-
     @Column(name = "curp", unique = true, nullable = false)
     private String curp;
+
+    @Column(nullable = false)
+    private String career;
+
+    private String location;
 
     private String phone;
 
@@ -32,6 +31,10 @@ public class Applicant {
 
     private String status = "PENDING";
 
+    @OneToOne
+    @JoinColumn(name = "file_number", referencedColumnName = "id")
+    private User user;
+
     // Getters y Setters
     public Long getId() {
         return id;
@@ -41,20 +44,28 @@ public class Applicant {
         this.id = id;
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
     public String getCurp() {
         return curp;
     }
 
     public void setCurp(String curp) {
         this.curp = curp;
+    }
+
+    public String getCareer() {
+        return career;
+    }
+
+    public void setCareer(String career) {
+        this.career = career;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 
     public String getPhone() {
@@ -95,5 +106,13 @@ public class Applicant {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

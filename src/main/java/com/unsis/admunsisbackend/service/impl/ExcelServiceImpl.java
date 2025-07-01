@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.transaction.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -42,8 +44,10 @@ public class ExcelServiceImpl implements ExcelService {
             "Carrera",
             "CURP",
             "Lugar",
-            "Aula/Sala de Cómputo"
-    };      
+            "Aula/Sala de Cómputo",
+            "Fecha Examen", // nueva
+            "Teléfono" // nueva
+    };       
 
     @Autowired
     private UserRepository userRepository;
@@ -122,48 +126,60 @@ public class ExcelServiceImpl implements ExcelService {
 
     @Transactional
     private void processRow(Row row, Role applicantRole) {
-        // Validar CURP
-        String curp = getCellValue(row.getCell(3));
-        if (!CURP_PATTERN.matcher(curp).matches()) {
-            throw new RuntimeException("Formato de CURP inválido");
-        }
-
-        // Validar carrera
-        String career = getCellValue(row.getCell(2)).toUpperCase();
-        if (!VALID_CAREERS.contains(career)) {
-            throw new RuntimeException("Carrera no válida");
-        }
-
-        // Validar que el usuario no exista ya por CURP
-        if (userRepository.existsByUsername(curp)) {
-            throw new RuntimeException("El usuario con CURP ya está registrado");
-        }
-
-        // Validar que el aspirante no exista ya por CURP
-        if (applicantRepository.existsByCurp(curp)) {
-            throw new RuntimeException("El aspirante con CURP ya existe");
-        }
-
-        // Crear usuario
-        User user = new User();
-        user.setUsername(curp);
-        user.setPassword(passwordEncoder.encode(curp)); // CURP como contraseña
-        user.setFullName(getCellValue(row.getCell(1)));
-        user.setActive(true);
-        user.setRoles(Set.of(applicantRole));
-        user = userRepository.save(user);
-
-        // Crear aspirante
-        Applicant applicant = new Applicant();
-        applicant.setUser(user);
-        applicant.setCurp(curp);
-        applicant.setExamRoom(getCellValue(row.getCell(5)));
-        applicant.setLocation(getCellValue(row.getCell(4)));
-        applicant.setCareer(career);
-        applicant.setStatus("PENDING");
-        applicant.setExamAssigned(false);
-        applicantRepository.save(applicant);
+    // Validar CURP
+    String curp = getCellValue(row.getCell(3));
+    if (!CURP_PATTERN.matcher(curp).matches()) {
+        throw new RuntimeException("Formato de CURP inválido");
     }
+
+    // Validar carrera
+    String career = getCellValue(row.getCell(2)).toUpperCase();
+    if (!VALID_CAREERS.contains(career)) {
+        throw new RuntimeException("Carrera no válida");
+    }
+
+    // Validar usuario existente no exista ya por CURP
+    if (userRepository.existsByUsername(curp)) {
+        throw new RuntimeException("El usuario con CURP ya está registrado");
+    }
+
+    // Validar aspirante existente no exista ya por CURP
+    if (applicantRepository.existsByCurp(curp)) {
+        throw new RuntimeException("El aspirante con CURP ya existe");
+    }
+
+    // Crear usuario
+    User user = new User();
+    user.setUsername(curp);
+    user.setPassword(passwordEncoder.encode(curp));
+    user.setFullName(getCellValue(row.getCell(1)));
+    user.setActive(true);
+    user.setRoles(Set.of(applicantRole));
+    user = userRepository.save(user);
+
+    //  Extraer fecha de examen y teléfono
+    String examDateStr = getCellValue(row.getCell(6)); // columna 7
+    String phone = getCellValue(row.getCell(7));       // columna 8
+
+    LocalDateTime examDate = null;
+    if (!examDateStr.isBlank()) {
+        examDate = LocalDateTime.parse(examDateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+    }
+
+    // Crear aspirante
+    Applicant applicant = new Applicant();
+    applicant.setUser(user);
+    applicant.setCurp(curp);
+    applicant.setCareer(career);
+    applicant.setLocation(getCellValue(row.getCell(4)));
+    applicant.setExamRoom(getCellValue(row.getCell(5)));
+    applicant.setPhone(phone);            //  nuevo
+    applicant.setExamDate(examDate);      //  nuevo
+    applicant.setExamAssigned(false);
+    applicant.setStatus("PENDING");
+    applicantRepository.save(applicant);
+}
+
 
     private String getCellValue(Cell cell) {
         if (cell == null) return "";

@@ -6,4 +6,6 @@ import java.util.Optional;
 
 public interface ApplicantRepository extends JpaRepository<Applicant, Long> {
     Optional<Applicant> findByUser_Id(Long userId);
+    boolean existsByCurp(String curp);
+
 }

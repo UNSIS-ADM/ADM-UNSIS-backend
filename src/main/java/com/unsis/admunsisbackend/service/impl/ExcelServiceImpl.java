@@ -49,8 +49,8 @@ public class ExcelServiceImpl implements ExcelService {
             "CURP",
             "Lugar",
             "Aula/Sala de Cómputo",
-            "Fecha Examen", // nueva
-            "Teléfono" // nueva
+            "Fecha Examen", 
+            "Teléfono" 
     };       
 
     @Autowired
@@ -87,7 +87,7 @@ public class ExcelServiceImpl implements ExcelService {
                 .orElseThrow(() -> new RuntimeException("Rol APPLICANT no encontrado"));
 
             Iterator<Row> rowIterator = sheet.iterator();
-            rowIterator.next(); // Skip header row
+            rowIterator.next(); 
             
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();

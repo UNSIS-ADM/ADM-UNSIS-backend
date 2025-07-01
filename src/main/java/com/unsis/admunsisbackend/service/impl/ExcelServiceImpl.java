@@ -33,7 +33,7 @@ public class ExcelServiceImpl implements ExcelService {
 
     private static final List<String> VALID_CAREERS = Arrays.asList(
         "LICENCIATURA EN ADMINISTRACION MUNICIPAL","LICENCIATURA EN ADMINISTRACION PÚBLICA", 
-        "LICENCIATURA EN ADMINISTRACION CIENCIAS BIOMÉDICAS", "LICENCIATURA EN ENFERMERÍA", 
+        "LICENCIATURA EN CIENCIAS BIOMÉDICAS", "LICENCIATURA EN ENFERMERÍA", 
         "LICENCIATURA EN INFORMATICA", "LICENCIATURA EN MEDICINA", "LICENCIATURA EN NUTRICION", 
         "LICENCIATURA EN ODONTOLOGÍA"
     );
@@ -45,8 +45,8 @@ public class ExcelServiceImpl implements ExcelService {
             "CURP",
             "Lugar",
             "Aula/Sala de Cómputo",
-            "Fecha Examen", // nueva
-            "Teléfono" // nueva
+            "Fecha Examen", 
+            "Teléfono" 
     };       
 
     @Autowired
@@ -83,7 +83,7 @@ public class ExcelServiceImpl implements ExcelService {
                 .orElseThrow(() -> new RuntimeException("Rol APPLICANT no encontrado"));
 
             Iterator<Row> rowIterator = sheet.iterator();
-            rowIterator.next(); // Skip header row
+            rowIterator.next(); 
             
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();

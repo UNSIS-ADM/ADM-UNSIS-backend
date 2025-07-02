@@ -25,6 +25,7 @@ public class AuthServiceImpl implements AuthService {
 
         if (!user.getPassword().equals(request.getPassword())) {
             throw new IllegalArgumentException("Invalid credentials");
+            
         }
 
         LoginResponse response = new LoginResponse();

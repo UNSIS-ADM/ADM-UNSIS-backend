@@ -8,6 +8,8 @@ public interface ApplicantRepository extends JpaRepository<Applicant, Long> {
     //Optional<Applicant> findByUser_Id(Long userId);    
     Optional<Applicant> findByFicha(Long ficha);
     boolean existsByFicha(Long ficha);
+    
+    Optional<Applicant> findByCurp(String curp);
     boolean existsByCurp(String curp);
 
 }

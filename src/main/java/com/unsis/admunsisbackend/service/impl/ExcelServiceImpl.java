@@ -161,6 +161,8 @@ public class ExcelServiceImpl implements ExcelService {
     user.setRoles(Set.of(applicantRole));
     user = userRepository.save(user);
 
+    Long fichaExcel = Long.valueOf(getCellValue(row.getCell(0)));
+
     //  Extraer fecha de examen y teléfono
     String examDateStr = getCellValue(row.getCell(6)); // columna 7
     String phone = getCellValue(row.getCell(7));       // columna 8
@@ -173,12 +175,13 @@ public class ExcelServiceImpl implements ExcelService {
     // Crear aspirante
     Applicant applicant = new Applicant();
     applicant.setUser(user);
+    applicant.setFicha(fichaExcel);
     applicant.setCurp(curp);
     applicant.setCareer(career);
     applicant.setLocation(getCellValue(row.getCell(4)));
     applicant.setExamRoom(getCellValue(row.getCell(5)));
-    applicant.setPhone(phone);            //  nuevo
-    applicant.setExamDate(examDate);      //  nuevo
+    applicant.setPhone(phone);            
+    applicant.setExamDate(examDate);
     applicant.setExamAssigned(false);
     applicant.setStatus("PENDING");
     applicantRepository.save(applicant);

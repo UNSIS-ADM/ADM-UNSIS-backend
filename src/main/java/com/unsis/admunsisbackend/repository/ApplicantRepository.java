@@ -5,7 +5,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface ApplicantRepository extends JpaRepository<Applicant, Long> {
-    Optional<Applicant> findByUser_Id(Long userId);
+    //Optional<Applicant> findByUser_Id(Long userId);    
+    Optional<Applicant> findByFicha(Long ficha);
+    boolean existsByFicha(Long ficha);
     boolean existsByCurp(String curp);
 
 }
+
+
+

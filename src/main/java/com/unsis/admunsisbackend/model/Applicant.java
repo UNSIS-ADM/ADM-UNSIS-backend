@@ -3,6 +3,7 @@ package com.unsis.admunsisbackend.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+
 @Entity
 @Table(name = "applicants")
 public class Applicant {
@@ -10,14 +11,18 @@ public class Applicant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "curp", unique = true, nullable = false)
+    // FK al usuario interno
+    @OneToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
+
+    @Column(nullable = false, unique = true)
+    private Long ficha; // <-- Nuevo
+
+    @Column(nullable = false, unique = true)
     private String curp;
-
-    @Column(nullable = false)
     private String career;
-
     private String location;
-
     private String phone;
 
     @Column(name = "exam_assigned")
@@ -31,10 +36,6 @@ public class Applicant {
 
     private String status = "PENDING";
 
-    @OneToOne
-    @JoinColumn(name = "file_number", referencedColumnName = "id")
-    private User user;
-
     // Getters y Setters
     public Long getId() {
         return id;
@@ -42,6 +43,14 @@ public class Applicant {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getFicha() {
+        return ficha;
+    }
+    
+    public void setFicha(Long ficha) {
+        this.ficha = ficha;
     }
 
     public String getCurp() {

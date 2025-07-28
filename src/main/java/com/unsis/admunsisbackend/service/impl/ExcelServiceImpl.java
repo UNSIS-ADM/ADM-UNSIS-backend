@@ -35,6 +35,7 @@ public class ExcelServiceImpl implements ExcelService {
     "LICENCIATURA EN ADMINISTRACION MUNICIPAL",
         "LICENCIATURA EN ADMINISTRACION PÚBLICA",
         "LICENCIATURA EN CIENCIAS BIOMÉDICAS",
+        "LICENCIATURA EN CIENCIAS EMPRESARIALES",
         "LICENCIATURA EN ENFERMERÍA",
         "LICENCIATURA EN INFORMATICA",
         "LICENCIATURA EN MEDICINA",
@@ -149,19 +150,21 @@ public class ExcelServiceImpl implements ExcelService {
 
     // Validar aspirante existente no exista ya por CURP
     if (applicantRepository.existsByCurp(curp)) {
-        throw new RuntimeException("El aspirante con CURP ya existe");
+        throw new RuntimeException("Ya existe un usuario con esta CURP");
     }
+    
+    Long fichaExcel = Long.valueOf(getCellValue(row.getCell(0))); 
+    String fichaStr = fichaExcel.toString();
 
     // Crear usuario
     User user = new User();
-    user.setUsername(curp);
+    user.setUsername(fichaStr); //Credenciales para el logueo
     user.setPassword(passwordEncoder.encode(curp));
     user.setFullName(getCellValue(row.getCell(1)));
     user.setActive(true);
     user.setRoles(Set.of(applicantRole));
     user = userRepository.save(user);
 
-    Long fichaExcel = Long.valueOf(getCellValue(row.getCell(0)));
 
     //  Extraer fecha de examen y teléfono
     String examDateStr = getCellValue(row.getCell(6)); // columna 7

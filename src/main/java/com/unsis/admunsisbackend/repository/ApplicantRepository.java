@@ -12,6 +12,9 @@ public interface ApplicantRepository extends JpaRepository<Applicant, Long> {
     Optional<Applicant> findByCurp(String curp);
     boolean existsByCurp(String curp);
 
+    // Método para encontrar un Applicant por el nombre de usuario del User asociado
+    Optional<Applicant> findByUser_Username(String username);
+
 }
 
 

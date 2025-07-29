@@ -51,7 +51,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:4200")); // Cambia aquí
+        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:4200")); // Cambia esto por tu URL de frontend
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList(
             "Authorization",
@@ -78,13 +78,13 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
-/*
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-}*/
 
+/* 
 @Bean
 public PasswordEncoder passwordEncoder() {
     // return new BCryptPasswordEncoder(); // Comentar esta línea
@@ -99,5 +99,5 @@ public PasswordEncoder passwordEncoder() {
             return rawPassword.toString().equals(encodedPassword);
         }
     };
-}
+}*/
 }

@@ -17,14 +17,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 public class UserController {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserService userService;
 
     @GetMapping("/admin/users")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")  // Usar hasAuthority en lugar de hasRole
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')") // Usar hasAuthority en lugar de hasRole
     public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
         logger.info("Request to get all users by admin");
         List<UserResponseDTO> users = userService.getAllUsers();
@@ -37,7 +37,7 @@ public class UserController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         logger.info("Request to get applicant profile for user: {}", username);
-        
+
         ApplicantResponseDTO profile = userService.getApplicantProfile(username);
         return ResponseEntity.ok(profile);
     }

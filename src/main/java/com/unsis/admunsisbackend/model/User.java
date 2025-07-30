@@ -2,6 +2,7 @@ package com.unsis.admunsisbackend.model;
 
 import jakarta.persistence.*;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -24,7 +25,7 @@ public class User {
     private String fullName;
 
     // Indica si el usuario está activo o no
-    private Boolean active = true;  
+    private Boolean active = true;
 
     @Column(name = "created_at", updatable = false)
     private Timestamp createdAt;
@@ -41,11 +42,14 @@ public class User {
     public User() {
         this.active = true;
     }
-    
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = new Timestamp(System.currentTimeMillis());
     }
+
+    @Column(name = "last_login")
+    private LocalDateTime lastLogin;
 
     // Getters y Setters
     public Long getId() {
@@ -63,6 +67,7 @@ public class User {
     public void setUsername(String username) {
         this.username = username;
     }
+
     // Evitar serializar contraseñas en respuestas JSON
     @JsonIgnore
     public String getPassword() {
@@ -114,5 +119,13 @@ public class User {
         if (applicant != null) {
             applicant.setUser(this);
         }
+    }
+
+    public LocalDateTime getLastLogin() {
+        return lastLogin;
+    }
+
+    public void setLastLogin(LocalDateTime lastLogin) {
+        this.lastLogin = lastLogin;
     }
 }

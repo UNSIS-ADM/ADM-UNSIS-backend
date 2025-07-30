@@ -31,6 +31,7 @@ public class ApplicantServiceImpl implements ApplicantService {
             dto.setExamRoom(applicant.getExamRoom());
             dto.setExamDate(applicant.getExamDate());
             dto.setStatus(applicant.getStatus());
+            dto.setLastLogin(applicant.getUser().getLastLogin());
             return dto;
         }).collect(Collectors.toList());
     }

@@ -14,9 +14,9 @@ public class ApplicantResponseDTO {
     private String examRoom;
     private LocalDateTime examDate;
     private String status;
+    private LocalDateTime lastLogin;
 
     // Getters y Setters
-
     public Long getId() {
         return id;
     }
@@ -71,5 +71,13 @@ public class ApplicantResponseDTO {
     }
     public void setStatus(String status) {
         this.status = status;
+    }
+    
+    public LocalDateTime getLastLogin() {
+        return lastLogin;
+    }
+
+    public void setLastLogin(LocalDateTime lastLogin) {
+        this.lastLogin = lastLogin;
     }
 }

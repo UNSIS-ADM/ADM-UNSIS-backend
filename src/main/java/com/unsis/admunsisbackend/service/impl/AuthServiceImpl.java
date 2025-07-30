@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,14 +28,18 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByUsername(request.getUsername())
             .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Credenciales inválidas");            
+            throw new IllegalArgumentException("Credenciales inválidas");
         }
+        
+        // Actualizar el campo lastLogin al momento actual
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
 
         LoginResponse response = new LoginResponse();
         response.setUsername(user.getUsername());
         response.setFullName(user.getFullName());
         response.setRoles(
-            user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())
+        user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())
         );
 
         if (user.getApplicant() != null) {

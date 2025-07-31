@@ -12,27 +12,50 @@ import java.util.stream.Collectors;
 
 @Service
 public class ApplicantServiceImpl implements ApplicantService {
-
     @Autowired
-    private ApplicantRepository applicantRepository;
+    private ApplicantRepository repo;
 
     @Override
     public List<ApplicantResponseDTO> getAllApplicants() {
-        List<Applicant> applicants = applicantRepository.findAll();
+        return repo.findAll().stream().map(this::toDto).collect(Collectors.toList());
+    }
 
-        return applicants.stream().map(applicant -> {
-            ApplicantResponseDTO dto = new ApplicantResponseDTO();
-            dto.setId(applicant.getId());
-            dto.setCurp(applicant.getCurp());
-            dto.setFullName(applicant.getUser().getFullName());
-            dto.setCareer(applicant.getCareer());
-            dto.setLocation(applicant.getLocation());
-            dto.setPhone(applicant.getPhone());
-            dto.setExamRoom(applicant.getExamRoom());
-            dto.setExamDate(applicant.getExamDate());
-            dto.setStatus(applicant.getStatus());
-            dto.setLastLogin(applicant.getUser().getLastLogin());
-            return dto;
-        }).collect(Collectors.toList());
+    @Override
+    public List<ApplicantResponseDTO> searchApplicants(
+            Long ficha,
+            String curp,
+            String career,
+            String fullName) {
+
+        List<Applicant> results;
+
+        if (ficha != null) {
+            results = repo.findByFicha(ficha).map(List::of).orElse(List.of());
+        } else if (curp != null && !curp.isBlank()) {
+            results = repo.findByCurpContainingIgnoreCase(curp);
+        } else if (career != null && !career.isBlank()) {
+            results = repo.findByCareerContainingIgnoreCase(career);
+        } else if (fullName != null && !fullName.isBlank()) {
+            results = repo.findByUser_FullNameContainingIgnoreCase(fullName);
+        } else {
+            results = repo.findAll();
+        }
+
+        return results.stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    private ApplicantResponseDTO toDto(Applicant a) {
+        ApplicantResponseDTO dto = new ApplicantResponseDTO();
+        dto.setId(a.getId());
+        dto.setCurp(a.getCurp());
+        dto.setFullName(a.getUser().getFullName());
+        dto.setCareer(a.getCareer());
+        dto.setLocation(a.getLocation());
+        dto.setPhone(a.getPhone());
+        dto.setExamRoom(a.getExamRoom());
+        dto.setExamDate(a.getExamDate());
+        dto.setStatus(a.getStatus());
+        dto.setLastLogin(a.getUser().getLastLogin());
+        return dto;
     }
 }

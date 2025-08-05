@@ -12,7 +12,7 @@ public interface ApplicantRepository extends JpaRepository<Applicant, Long> {
     // Optional<Applicant> findByUser_Id(Long userId);
     Optional<Applicant> findByFicha(Long ficha);
 
-    boolean existsByFicha(Long ficha);
+    boolean existsByFicha(Long ficha); 
     
     List<Applicant> findByCurpContainingIgnoreCase(String curp);
     List<Applicant> findByCareerContainingIgnoreCase(String career);

@@ -37,7 +37,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                .requestMatchers("/api/user/**").hasAuthority("ROLE_USER")
+                .requestMatchers("/api/user/**")    .hasAuthority("ROLE_USER")
                 .requestMatchers("/api/applicant/**").hasAuthority("ROLE_APPLICANT")
                 .requestMatchers("/api/admin/upload-results").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/admin/results").hasAnyAuthority("ROLE_ADMIN","ROLE_USER")

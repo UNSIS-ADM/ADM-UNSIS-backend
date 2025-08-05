@@ -7,7 +7,6 @@ public class AdmissionResultDTO{
     private Long id;
     private long ficha;
     private Long applicantId;
-    private Long ficha; // Nuevo campo para almacenar la ficha del applicant
     private String fullName;
     private String career;
     private String result;
@@ -37,14 +36,6 @@ public class AdmissionResultDTO{
     }
 
     public void setFicha(Long ficha) {
-        this.ficha = ficha;
-    }
-
-    public long getFicha() {
-        return ficha;
-    }
-
-    public void setFicha(long ficha) {
         this.ficha = ficha;
     }
 

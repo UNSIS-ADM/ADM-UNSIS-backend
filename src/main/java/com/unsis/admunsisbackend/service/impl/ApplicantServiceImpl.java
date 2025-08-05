@@ -26,6 +26,7 @@ public class ApplicantServiceImpl implements ApplicantService {
     
     @Autowired private VacancyRepository vacancyRepo;
 
+    @Autowired
     private ApplicantRepository repo;
 
     @Override

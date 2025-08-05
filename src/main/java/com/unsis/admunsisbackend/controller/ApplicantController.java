@@ -16,9 +16,6 @@ public class ApplicantController {
     @Autowired
     private ApplicantService service;
 
-    @Autowired
-    private ApplicantService service;
-
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
     public ResponseEntity<List<ApplicantResponseDTO>> getAll() {

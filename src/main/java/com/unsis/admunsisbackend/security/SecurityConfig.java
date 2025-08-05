@@ -39,7 +39,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/user/**").hasAuthority("ROLE_USER")
                 .requestMatchers("/api/applicant/**").hasAuthority("ROLE_APPLICANT")
-                // dentro de authorizeHttpRequests(...)
                 .requestMatchers("/api/admin/upload-results").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/admin/results").hasAnyAuthority("ROLE_ADMIN","ROLE_USER")
                 .anyRequest().authenticated())

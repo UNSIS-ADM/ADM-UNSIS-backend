@@ -2,6 +2,7 @@ package com.unsis.admunsisbackend.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.Year;
 
 
 @Entity
@@ -36,7 +37,24 @@ public class Applicant {
 
     private String status = "PENDING";
 
+    @Column(name="admission_year", nullable=false)
+    private Integer admissionYear;
+    
+    // Constructor que asigna el año actual por defecto
+    public Applicant() {
+        this.admissionYear = Year.now().getValue(); // Asignación automática
+    }
+
     // Getters y Setters
+    public Integer getAdmissionYear() {
+        return this.admissionYear;
+    }
+
+    // Setter con lógica para asignar año actual si es null
+    public void setAdmissionYear(Integer admissionYear) {
+        this.admissionYear = (admissionYear != null) ? admissionYear : Year.now().getValue();
+    }
+
     public Long getId() {
         return id;
     }

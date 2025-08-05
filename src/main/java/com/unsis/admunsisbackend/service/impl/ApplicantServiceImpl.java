@@ -47,6 +47,7 @@ public class ApplicantServiceImpl implements ApplicantService {
     private ApplicantResponseDTO toDto(Applicant a) {
         ApplicantResponseDTO dto = new ApplicantResponseDTO();
         dto.setId(a.getId());
+        dto.setFicha(a.getFicha());
         dto.setCurp(a.getCurp());
         dto.setFullName(a.getUser().getFullName());
         dto.setCareer(a.getCareer());

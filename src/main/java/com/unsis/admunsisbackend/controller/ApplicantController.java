@@ -14,16 +14,26 @@ import java.util.List;
 public class ApplicantController {
 
     @Autowired
-    private ApplicantService applicantService;
+    private ApplicantService service;
 
     @Autowired
     private ApplicantService service;
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
-    public ResponseEntity<List<ApplicantResponseDTO>> getAllApplicants() {
-        List<ApplicantResponseDTO> list = applicantService.getAllApplicants();
-        return ResponseEntity.ok(list);
+    public ResponseEntity<List<ApplicantResponseDTO>> getAll() {
+        return ResponseEntity.ok(service.getAllApplicants());
+    }
+
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
+    public ResponseEntity<List<ApplicantResponseDTO>> search(
+            @RequestParam(required = false) Long ficha,
+            @RequestParam(required = false) String curp,
+            @RequestParam(required = false) String career,
+            @RequestParam(required = false, name = "fullName") String fullName) {
+        return ResponseEntity.ok(
+                service.searchApplicants(ficha, curp, career, fullName));
     }
 
     @PutMapping("/{curp}/career")

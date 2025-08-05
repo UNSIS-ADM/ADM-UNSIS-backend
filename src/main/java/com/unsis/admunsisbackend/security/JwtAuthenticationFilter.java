@@ -23,20 +23,24 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
+    // Inyectamos el JwtTokenProvider para validar y extraer información del token JWT
     @Autowired
     private JwtTokenProvider tokenProvider;
 
+    // Inyectamos el UserDetailsService para cargar los detalles del usuario
     @Autowired
-    private UserDetailsService userDetailsService; // Este bean se resuelve en CustomUserDetailsService
+    private UserDetailsService userDetailsService; 
 
+    // Método que se ejecuta para cada solicitud HTTP
     @Override
-    protected void doFilterInternal(HttpServletRequest request, 
-                                  HttpServletResponse response, 
-                                  FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
             logger.info("URL solicitada: " + request.getRequestURL());
-            logger.info("Token JWT recibido: " + (jwt != null ? jwt.substring(0, Math.min(10, jwt.length())) + "..." : "null"));
+            logger.info("Token JWT recibido: "
+                    + (jwt != null ? jwt.substring(0, Math.min(10, jwt.length())) + "..." : "null"));
 
             if (StringUtils.hasText(jwt)) {
                 if (tokenProvider.validateToken(jwt)) {
@@ -46,12 +50,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                     logger.info("Roles del usuario: " + userDetails.getAuthorities());
 
-                    UsernamePasswordAuthenticationToken authentication = 
-                        new UsernamePasswordAuthenticationToken(
-                            userDetails, 
-                            null, 
-                            userDetails.getAuthorities()
-                        );
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     logger.info("Autenticación establecida exitosamente en el SecurityContext");
@@ -71,14 +73,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         logger.debug("Header Authorization: " + bearerToken);
-        
+
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
         return null;
     }
-
-    
 }
-
-

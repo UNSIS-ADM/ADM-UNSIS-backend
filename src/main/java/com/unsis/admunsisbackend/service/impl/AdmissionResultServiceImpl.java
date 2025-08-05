@@ -145,5 +145,3 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
         }).collect(Collectors.toList());
     }
 }
-
-

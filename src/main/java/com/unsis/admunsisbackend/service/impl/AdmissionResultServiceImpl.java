@@ -141,6 +141,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
             dto.setComment(ar.getComment());
             dto.setScore(ar.getScore());
             dto.setCreatedAt(ar.getCreatedAt());
+            dto.setLastLogin(ar.getApplicant().getUser().getLastLogin());
             return dto;
         }).collect(Collectors.toList());
     }

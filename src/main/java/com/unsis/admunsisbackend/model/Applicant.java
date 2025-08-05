@@ -40,16 +40,14 @@ public class Applicant {
     @Column(name="admission_year", nullable=false)
     private Integer admissionYear;
     
-    // Constructor que asigna el año actual por defecto
     public Applicant() {
-        this.admissionYear = Year.now().getValue(); // Asignación automática
+        this.admissionYear = Year.now().getValue(); // Asignación automática del año actual
     }
 
-    // Getters y Setters
     public Integer getAdmissionYear() {
         return this.admissionYear;
     }
-
+    // Getters y Setters
     // Setter con lógica para asignar año actual si es null
     public void setAdmissionYear(Integer admissionYear) {
         this.admissionYear = (admissionYear != null) ? admissionYear : Year.now().getValue();

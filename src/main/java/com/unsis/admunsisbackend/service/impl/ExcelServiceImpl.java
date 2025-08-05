@@ -183,8 +183,8 @@ public class ExcelServiceImpl implements ExcelService {
         user = userRepository.save(user);
 
         // Extraer fecha de examen y teléfono
-        String examDateStr = getCellValue(row.getCell(6)); // columna 7
-        String phone = getCellValue(row.getCell(7)); // columna 8
+        String examDateStr = getCellValue(row.getCell(6)); 
+        String phone = getCellValue(row.getCell(7)); 
 
         LocalDateTime examDate = null;
         if (!examDateStr.isBlank()) {

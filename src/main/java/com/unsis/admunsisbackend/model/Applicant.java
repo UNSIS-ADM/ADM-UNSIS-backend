@@ -12,6 +12,7 @@ public class Applicant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+<<<<<<< Updated upstream
     // FK al usuario interno
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
@@ -21,6 +22,12 @@ public class Applicant {
     private Long ficha; // <-- Nuevo
 
     @Column(nullable = false, unique = true)
+=======
+    @Column(nullable = false)
+    private Long ficha;
+
+    @Column(name = "curp", unique = true, nullable = false)
+>>>>>>> Stashed changes
     private String curp;
     private String career;
     private String location;
@@ -66,7 +73,11 @@ public class Applicant {
     public Long getFicha() {
         return ficha;
     }
+<<<<<<< Updated upstream
     
+=======
+
+>>>>>>> Stashed changes
     public void setFicha(Long ficha) {
         this.ficha = ficha;
     }

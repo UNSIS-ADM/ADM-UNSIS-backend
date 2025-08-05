@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 public class AdmissionResultDTO{
     private Long id;
     private Long applicantId;
+    private Long ficha; // Nuevo campo para almacenar la ficha del applicant
     private String fullName;
     private String career;
     private String result;
@@ -28,6 +29,14 @@ public class AdmissionResultDTO{
 
     public void setApplicantId(Long applicantId) {
         this.applicantId = applicantId;
+    }
+    
+    public Long getFicha() {
+        return ficha;
+    }
+
+    public void setFicha(Long ficha) {
+        this.ficha = ficha;
     }
 
     public String getFullName() {

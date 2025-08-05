@@ -134,6 +134,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
             AdmissionResultDTO dto = new AdmissionResultDTO();
             dto.setId(ar.getId());
             dto.setApplicantId(ar.getApplicant().getId());
+            dto.setFicha(ar.getApplicant().getFicha());
             dto.setFullName(ar.getApplicant().getUser().getFullName());
             dto.setCareer(ar.getApplicant().getCareer());
             dto.setResult(ar.getResult());

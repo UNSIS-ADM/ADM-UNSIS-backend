@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 public class AdmissionResultDTO{
     private Long id;
+    private long ficha;
     private Long applicantId;
     private String fullName;
     private String career;
@@ -28,6 +29,14 @@ public class AdmissionResultDTO{
 
     public void setApplicantId(Long applicantId) {
         this.applicantId = applicantId;
+    }
+
+    public long getFicha() {
+        return ficha;
+    }
+
+    public void setFicha(long ficha) {
+        this.ficha = ficha;
     }
 
     public String getFullName() {

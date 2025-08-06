@@ -24,9 +24,11 @@ public class CareerChangeServiceImpl implements CareerChangeService {
     @Override
     @Transactional
     public CareerChangeRequestDTO submitChange(String username, CreateCareerChangeRequestDTO dto) {
+        // 1) Buscar el User y su Applicant
         User user = userRepo.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));  // si no es aspirante, error
 
+        // 2) Verificar que NO tenga ya una solicitud PENDING
         Applicant app = user.getApplicant();
         if (app == null)
             throw new RuntimeException("No es aspirante");
@@ -35,7 +37,8 @@ public class CareerChangeServiceImpl implements CareerChangeService {
                 .ifPresent(r -> {
                     throw new RuntimeException("Ya hay una solicitud pendiente");
                 });
-
+        
+        // 3) Crear y guardar la solicitud
         CareerChangeRequest r = new CareerChangeRequest();
         r.setApplicant(app);
         r.setOldCareer(app.getCareer());
@@ -56,27 +59,32 @@ public class CareerChangeServiceImpl implements CareerChangeService {
     @Transactional
     public CareerChangeRequestDTO processRequest(Long requestId, ProcessCareerChangeRequestDTO dto,
             String adminUsername) {
+        // 1) Cargar la solicitud
         CareerChangeRequest r = reqRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
 
         if (!"PENDING".equals(r.getStatus())) {
             throw new RuntimeException("Solicitud ya procesada");
         }
+        // 2) Cargar el admin/secretaria que procesa
         User admin = userRepo.findByUsername(adminUsername)
                 .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
 
+        // 3) Guardar comentarios y quién procesó
         r.setResponseComment(dto.getResponseComment());
         r.setProcessedAt(LocalDateTime.now());
         r.setProcessedBy(admin);
 
         if ("APPROVE".equalsIgnoreCase(dto.getAction())) {
+            // 4a) Aprobar: actualizar Applicant.career y Applicant.status
             r.setStatus("APPROVED");
             // Actualiza carrera y status en Applicant
             Applicant a = r.getApplicant();
             a.setCareer(r.getNewCareer());
-            a.setStatus("CARRERA CAMBIADA");
+            a.setStatus("ACEPTADO");
             applicantRepo.save(a);
         } else {
+            // 4b) Rechazar: solo actualizar status
             r.setStatus("DENIED");
         }
         return toDto(reqRepo.save(r));

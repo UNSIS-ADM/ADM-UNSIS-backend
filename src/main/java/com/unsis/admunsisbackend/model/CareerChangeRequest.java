@@ -10,23 +10,34 @@ public class CareerChangeRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne @JoinColumn(name="applicant_id", nullable=false)
+    @ManyToOne
+    @JoinColumn(name = "applicant_id", nullable = false)
     private Applicant applicant;
 
-    @Column(name="old_career",     nullable=false) private String oldCareer;
-    @Column(name="new_career",     nullable=false) private String newCareer;
-    @Column(nullable=false)                        private String status; // PENDING, APPROVED, DENIED
-    @Column(name="request_comment")                 private String requestComment;
-    @Column(name="response_comment")                private String responseComment;
+    @Column(name = "old_career", nullable = false)
+    private String oldCareer;
 
-    @Column(name="requested_at", updatable=false)
-    private LocalDateTime requestedAt;
+    @Column(name = "new_career", nullable = false)
+    private String newCareer;
 
-    @Column(name="processed_at")
-    private LocalDateTime processedAt;
+    @Column(nullable = false)
+    private String status;              // PENDING, APPROVED, DENIED
 
-    @ManyToOne @JoinColumn(name="processed_by")
-    private User processedBy;  // quien aprobó/rechazó
+    @Column(name = "request_comment")
+    private String requestComment;      // Comentario del aspirante
+
+    @Column(name = "response_comment")
+    private String responseComment;     // Comentario del admin/secretaria
+
+    @Column(name = "requested_at", updatable = false)
+    private LocalDateTime requestedAt;  // Fecha de solicitud
+
+    @Column(name = "processed_at")
+    private LocalDateTime processedAt;  // Fecha de aprobación/rechazo
+
+    @ManyToOne
+    @JoinColumn(name = "processed_by")
+    private User processedBy;           //Quien prcesó, aprobó/rechazó
 
     @PrePersist
     protected void onCreate() {

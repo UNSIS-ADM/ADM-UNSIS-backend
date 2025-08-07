@@ -11,5 +11,7 @@ public interface CareerChangeRequestRepository
 
   Optional<CareerChangeRequest> findByApplicantAndStatus(Applicant app, String status);
   List<CareerChangeRequest> findByStatus(String status);
+  List<CareerChangeRequest> findByApplicant(Applicant applicant);
+
 }
 

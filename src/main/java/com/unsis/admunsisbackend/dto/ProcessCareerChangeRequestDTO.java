@@ -3,7 +3,7 @@ package com.unsis.admunsisbackend.dto;
 
 public class ProcessCareerChangeRequestDTO {
 
-    private String action; // "APPROVE" o "DENY"
+    private String action; // "ACEPTADO" o "RECHAZADO"
     private String responseComment;
 
     // getters/setters

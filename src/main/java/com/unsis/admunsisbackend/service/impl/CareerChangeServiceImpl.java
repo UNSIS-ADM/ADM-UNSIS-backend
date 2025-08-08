@@ -15,14 +15,10 @@ import java.util.stream.Collectors;
 @Service
 public class CareerChangeServiceImpl implements CareerChangeService {
 
-    @Autowired
-    private ApplicantRepository applicantRepo;
-    @Autowired
-    private UserRepository userRepo;
-    @Autowired
-    private VacancyRepository vacancyRepo;
-    @Autowired
-    private CareerChangeRequestRepository reqRepo;
+    @Autowired private ApplicantRepository applicantRepo;
+    @Autowired private UserRepository userRepo;
+    @Autowired private VacancyRepository vacancyRepo;
+    @Autowired private CareerChangeRequestRepository reqRepo;
 
     @Override
     @Transactional
@@ -49,11 +45,13 @@ public class CareerChangeServiceImpl implements CareerChangeService {
         // 4) Validar vacantes disponibles (sin modificar limit_count)
         int año = app.getAdmissionYear();
         Vacancy vac = vacancyRepo.findByCareerAndAdmissionYear(nuevaCarrera, año)
-                .orElseThrow(() -> new RuntimeException("Vacantes no configuradas para esa carrera"));
-        long inscritos = applicantRepo.countByCareerAndAdmissionYear(nuevaCarrera, año);
-        if (inscritos >= vac.getLimitCount()) {
+                .orElseThrow(() -> new RuntimeException("Vacantes no configuradas para" + nuevaCarrera));
+        if (vac.getAvailableSlots() <= 0) {
             throw new RuntimeException("Cupo agotado para " + nuevaCarrera);
         }
+
+        vac.setAvailableSlots(vac.getAvailableSlots() - 1); // Reservar un slot
+        vacancyRepo.save(vac); // Guardar la vacante actualizada
 
         // 5) Crear solicitud
         CareerChangeRequest solicitud = new CareerChangeRequest();
@@ -114,11 +112,22 @@ public class CareerChangeServiceImpl implements CareerChangeService {
         } else {
             // Cambiar a RECHAZADO
             solicitud.setStatus("RECHAZADO");
-            app.setStatus("RECHAZADO");
-            applicantRepo.save(app);
-        }
 
-        return toDto(reqRepo.save(solicitud));
+            String oldCareer = solicitud.getOldCareer();
+            int year = solicitud.getApplicant().getAdmissionYear();
+
+
+            Vacancy oldCareerVacancy = vacancyRepo
+                    .findByCareerAndAdmissionYear(oldCareer, year)
+                    .orElseThrow(() -> new RuntimeException(
+                            "Vacantes no configuradas para " + oldCareer + " en " + year));
+
+            // Reincrementamos la vacante que habíamos reservado al crear la solicitud
+            oldCareerVacancy.setAvailableSlots(oldCareerVacancy.getAvailableSlots() + 1);
+            vacancyRepo.save(oldCareerVacancy);
+        }
+        CareerChangeRequest saved = reqRepo.save(solicitud);
+        return toDto(saved);
     }
 
     private CareerChangeRequestDTO toDto(CareerChangeRequest r) {
@@ -134,5 +143,6 @@ public class CareerChangeServiceImpl implements CareerChangeService {
         d.setProcessedAt(r.getProcessedAt());
         d.setProcessedBy(r.getProcessedBy() != null ? r.getProcessedBy().getUsername() : null);
         return d;
+        
     }
 }

@@ -20,6 +20,15 @@ public class Vacancy {
     @Column(name = "limit_count", nullable = false)
     private Integer limitCount;
 
+    @Column(name = "accepted_count", nullable = false)
+    private Integer acceptedCount;
+
+    @Column(name = "pending_count", nullable = false)
+    private Integer pendingCount;
+
+    @Column(name = "available_slots", nullable = false)
+    private Integer availableSlots;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -63,12 +72,36 @@ public class Vacancy {
         this.admissionYear = admissionYear;
     }
 
+    public Integer getAcceptedCount() {
+        return acceptedCount;
+    }
+
+    public void setAcceptedCount(Integer acceptedCount) {
+        this.acceptedCount = acceptedCount;
+    }
+
+    public Integer getPendingCount() {
+        return pendingCount;
+    }
+
+    public void setPendingCount(Integer pendingCount) {
+        this.pendingCount = pendingCount;
+    }
+
     public Integer getLimitCount() {
         return limitCount;
     }
 
     public void setLimitCount(Integer limitCount) {
         this.limitCount = limitCount;
+    }
+
+    public Integer getAvailableSlots() {
+        return availableSlots;
+    }
+
+    public void setAvailableSlots(Integer availableSlots) {
+        this.availableSlots = availableSlots;
     }
 
     public LocalDateTime getCreatedAt() {

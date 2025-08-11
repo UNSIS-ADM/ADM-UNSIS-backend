@@ -117,7 +117,7 @@ public class CareerChangeServiceImpl implements CareerChangeService {
             int year = solicitud.getApplicant().getAdmissionYear();
 
 
-            Vacancy oldCareerVacancy = vacancyRepo
+            Vacancy oldCareerVacancy = vacancyRepo  
                     .findByCareerAndAdmissionYear(oldCareer, year)
                     .orElseThrow(() -> new RuntimeException(
                             "Vacantes no configuradas para " + oldCareer + " en " + year));
@@ -134,6 +134,7 @@ public class CareerChangeServiceImpl implements CareerChangeService {
         CareerChangeRequestDTO d = new CareerChangeRequestDTO();
         d.setId(r.getId());
         d.setApplicantId(r.getApplicant().getId());
+        d.setFicha(r.getApplicant() != null ? r.getApplicant().getFicha() : null);
         d.setOldCareer(r.getOldCareer());
         d.setNewCareer(r.getNewCareer());
         d.setStatus(r.getStatus());

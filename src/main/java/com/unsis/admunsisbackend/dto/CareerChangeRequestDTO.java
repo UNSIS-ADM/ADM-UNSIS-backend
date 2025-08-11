@@ -6,6 +6,7 @@ public class CareerChangeRequestDTO {
 
     private Long id;
     private Long applicantId;
+    private Long ficha;
     private String oldCareer;
     private String newCareer;
     private String status;
@@ -30,6 +31,14 @@ public class CareerChangeRequestDTO {
 
     public void setApplicantId(Long applicantId) {
         this.applicantId = applicantId;
+    }
+
+    public Long getFicha() {
+        return ficha;
+    }
+
+    public void setFicha(Long ficha) {
+        this.ficha = ficha;
     }
 
     public String getOldCareer() {

@@ -44,5 +44,13 @@ public class CareerChangeController {
     return ResponseEntity.ok(
       service.processRequest(id, dto, ud.getUsername()));
   }
+
+  // 1) Listar todas las solicitudes del aspirante logueado
+  @GetMapping("/applicant/change-career/requests")
+  @PreAuthorize("hasAuthority('ROLE_APPLICANT')")
+  public ResponseEntity<List<CareerChangeRequestDTO>> myRequests(@AuthenticationPrincipal UserDetails ud) {
+    return ResponseEntity.ok(service.listByUsername(ud.getUsername()));
+  }
+
 }
-  
+

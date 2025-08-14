@@ -17,6 +17,9 @@ public class CareerChangeRequest {
     @Column(name = "old_career", nullable = false)
     private String oldCareer;
 
+    @Column(name = "old_status", nullable = false)
+    private String oldStatus;
+
     @Column(name = "new_career", nullable = false)
     private String newCareer;
 
@@ -63,6 +66,14 @@ public class CareerChangeRequest {
 
     public void setOldCareer(String oldCareer) {
         this.oldCareer = oldCareer;
+    }
+
+    public String getOldStatus() {
+        return oldStatus;
+    }
+
+    public void setOldStatus(String oldStatus) {
+        this.oldStatus = oldStatus;
     }
 
     public String getNewCareer() {

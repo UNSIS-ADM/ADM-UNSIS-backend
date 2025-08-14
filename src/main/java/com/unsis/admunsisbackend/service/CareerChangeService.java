@@ -8,4 +8,7 @@ public interface CareerChangeService {
     CareerChangeRequestDTO submitChange(String username, CreateCareerChangeRequestDTO dto);
     List<CareerChangeRequestDTO> listPending();  // solo Admin/Secretaría
     CareerChangeRequestDTO processRequest(Long requestId, ProcessCareerChangeRequestDTO dto, String adminUsername);
+
+    List<CareerChangeRequestDTO> listByUsername(String username);
+
 }

@@ -68,6 +68,7 @@ public class CareerChangeServiceImpl implements CareerChangeService {
         solicitud.setOldCareer(app.getCareer());
         solicitud.setNewCareer(nuevaCarrera);
         solicitud.setRequestComment(dto.getRequestComment());
+        solicitud.setResponseComment("SOLICITUD ENVIADA");
         solicitud.setOldStatus(app.getStatus());
         solicitud.setStatus("PENDIENTE");
         solicitud = reqRepo.save(solicitud);
@@ -157,36 +158,12 @@ public class CareerChangeServiceImpl implements CareerChangeService {
 
         toDto(saved);
     }
-    /*
-     * else {
-     * // Rechazar: devolver la vacante reservada y marcar al applicant con estatus
-     * // "SOLICITUD RECHAZADA"
-     * solicitud.setStatus("RECHAZADO"); // o "SOLICITUD RECHAZADA" si prefieres
-     * texto largo
-     * app.setStatus("SOLICITUD RECHAZADA, pero sigues en inscrito en " +
-     * app.getCareer());
-     * applicantRepo.save(app);
-     * 
-     * String oldCareer = solicitud.getOldCareer();
-     * int year = solicitud.getApplicant().getAdmissionYear();
-     * Vacancy oldCareerVacancy = vacancyRepo
-     * .findByCareerAndAdmissionYear(oldCareer, year)
-     * .orElseThrow(() -> new RuntimeException(
-     * "Vacantes no configuradas para " + oldCareer + " en " + year));
-     * 
-     * // Reincrementamos la vacante que habíamos reservado al crear la solicitud
-     * oldCareerVacancy.setAvailableSlots(oldCareerVacancy.getAvailableSlots() + 1);
-     * vacancyRepo.save(oldCareerVacancy);
-     * }
-     * CareerChangeRequest saved = reqRepo.save(solicitud);
-     * return toDto(saved);
-     * }
-     */
-
+    
     private CareerChangeRequestDTO toDto(CareerChangeRequest r) {
         CareerChangeRequestDTO d = new CareerChangeRequestDTO();
         d.setId(r.getId());
         d.setApplicantId(r.getApplicant().getId());
+        d.setFullName(r.getApplicant().getUser().getFullName());
         d.setFicha(r.getApplicant() != null ? r.getApplicant().getFicha() : null);
         d.setOldCareer(r.getOldCareer());
         d.setNewCareer(r.getNewCareer());
@@ -224,13 +201,6 @@ public class CareerChangeServiceImpl implements CareerChangeService {
  * 
  * 118 THHB010228HOCNRLC1 CASIMIRA REYES LOPEZ LICENCIATURA EN MEDICINA
  * RECHAZADO -> RECHAZADO
- * 
- * Hay un pequeño error porque esta permitiendo solicitar su cambio a las misma
- * carrera odonto a odonto,
- * Ademas Explicame donde debo de exponer el endpoint para que el aspirante vea su resultado de su solicitud
- * 
- * Tambien si desde el front se manda en minuscula no acepta la solicitud.
- * Carlos arreglar los alerts, por otros mensajes.
  * 
  * Id Ficha Carrera adscrita Carrera Solicitada Comentario del aspirante Estado
  * Acciones

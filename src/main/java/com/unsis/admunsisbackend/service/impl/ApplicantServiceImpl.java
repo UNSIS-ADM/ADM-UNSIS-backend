@@ -17,10 +17,10 @@ import java.util.stream.Collectors;
 
 @Service
 public class ApplicantServiceImpl implements ApplicantService {
-    @Autowired
-
-    private ApplicantRepository applicantRepository;
-        
+    //Hace el cambio directo sin solicitud
+    //Usado por el admin en el panel de control
+    //Usado por el servicio de correo para aceptar solicitudes
+            
     @Autowired
     private ApplicantRepository applicantRepo;
     

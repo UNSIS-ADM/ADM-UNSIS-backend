@@ -72,9 +72,10 @@ public class CareerChangeServiceImpl implements CareerChangeService {
     @Override
     public List<CareerChangeRequestDTO> listPending() {
         return reqRepo.findByStatus("PENDIENTE")
-                .stream().map(this::toDto).collect(Collectors.toList());
+             
+        .stream().map(this::toDto).collect(Collectors.toList());
     }
-
+//Inico de INTEGRACION
     @Override
     @Transactional
     public CareerChangeRequestDTO processRequest(Long requestId, ProcessCareerChangeRequestDTO dto,
@@ -96,28 +97,37 @@ public class CareerChangeServiceImpl implements CareerChangeService {
 
         // Re-verificar vacantes (en caso de race condition)
         Vacancy vac = vacancyRepo.findByCareerAndAdmissionYear(nuevaCarrera, año)
-                .orElseThrow(() -> new RuntimeException("Vacantes no configuradas"));
+                .orElseThrow(() -> new RuntimeException("Vacantes no configuradas para " +  nuevaCarrera));
 
         // Procesar
         solicitud.setResponseComment(dto.getResponseComment());
         solicitud.setProcessedAt(LocalDateTime.now());
         solicitud.setProcessedBy(admin);
 
+        // Acción en español: dto.getAction() = "ACEPTADO" o "RECHAZADO"
+        String accion = dto.getAction() != null ? dto.getAction().trim().toUpperCase() : "";
+
         if ("ACEPTADO".equalsIgnoreCase(dto.getAction())) {
             // Cambiar a ACEPTADO
+            // Aprobar: consumimos la reserva (ya fue descontada en submitChange),
+            // actualizamos applicant.career y applicant.status a "ACEPTADO".
             solicitud.setStatus("ACEPTADO");
             app.setCareer(nuevaCarrera);
             app.setStatus("ACEPTADO");
             applicantRepo.save(app);
-        } else {
-            // Cambiar a RECHAZADO
-            solicitud.setStatus("RECHAZADO");
+            // Opcional: recalcular counters de vacante (accepted_count, available_slots)
+            // vacancyService.recalculateOne(nuevaCarrera, año); // si tienes ese servicio
+        }
+        else {
+            // Rechazar: devolver la vacante reservada y marcar al applicant con estatus
+            // "SOLICITUD RECHAZADA"
+            solicitud.setStatus("RECHAZADO"); // o "SOLICITUD RECHAZADA" si prefieres texto largo
+            app.setStatus("SOLICITUD RECHAZADA, pero sigues en inscrito en " + app.getCareer());
+            applicantRepo.save(app);
 
             String oldCareer = solicitud.getOldCareer();
             int year = solicitud.getApplicant().getAdmissionYear();
-
-
-            Vacancy oldCareerVacancy = vacancyRepo  
+            Vacancy oldCareerVacancy = vacancyRepo
                     .findByCareerAndAdmissionYear(oldCareer, year)
                     .orElseThrow(() -> new RuntimeException(
                             "Vacantes no configuradas para " + oldCareer + " en " + year));
@@ -147,3 +157,6 @@ public class CareerChangeServiceImpl implements CareerChangeService {
         
     }
 }
+
+
+

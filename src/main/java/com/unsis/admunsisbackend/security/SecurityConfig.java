@@ -24,6 +24,8 @@ import java.util.Collections;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+    @Autowired
+    private RoleAccessRestrictionFilter roleAccessRestrictionFilter;
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -41,8 +43,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/applicant/**").hasAuthority("ROLE_APPLICANT")
                 .requestMatchers("/api/admin/upload-results").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/admin/results").hasAnyAuthority("ROLE_ADMIN","ROLE_USER")
-                .anyRequest().authenticated())
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .anyRequest().authenticated());
+            http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            //http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(roleAccessRestrictionFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

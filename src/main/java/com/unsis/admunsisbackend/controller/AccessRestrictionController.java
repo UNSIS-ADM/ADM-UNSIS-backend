@@ -1,79 +1,49 @@
-// src/main/java/com/unsis/admunsisbackend/controller/AccessRestrictionController.java
 package com.unsis.admunsisbackend.controller;
 
-import com.unsis.admunsisbackend.dto.CreateRestrictionDTO;
 import com.unsis.admunsisbackend.dto.AccessRestrictionDTO;
 import com.unsis.admunsisbackend.model.AccessRestriction;
 import com.unsis.admunsisbackend.service.AccessRestrictionService;
+import com.unsis.admunsisbackend.service.impl.AccessRestrictionServiceImpl;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.http.ResponseEntity;
 
 @RestController
-@RequestMapping("/api/admin/access")
-@PreAuthorize("hasAuthority('ROLE_ADMIN')")
+@RequestMapping("/api/admin/access-restriction")
 public class AccessRestrictionController {
 
     @Autowired
     private AccessRestrictionService service;
 
-    @PostMapping("/weekly")
-    public ResponseEntity<AccessRestrictionDTO> create(@RequestBody CreateRestrictionDTO dto) {
-        AccessRestriction w = dtoToEntity(dto);
-        AccessRestriction saved = service.create(w);
-        return ResponseEntity.ok(entityToDto(saved));
+    // Obtener la regla actual (si existe)
+    @GetMapping
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<AccessRestrictionDTO> get() {
+        AccessRestriction r = service.getRestriction();
+        return ResponseEntity.ok(AccessRestrictionServiceImpl.toDto(r));
     }
 
-    @PutMapping("/weekly/{id}")
-    public ResponseEntity<AccessRestrictionDTO> update(@PathVariable Long id,
-            @RequestBody CreateRestrictionDTO dto) {
-        AccessRestriction w = dtoToEntity(dto);
-        AccessRestriction saved = service.update(id, w);
-        return ResponseEntity.ok(entityToDto(saved));
+    // Crear o actualizar (solo ADMIN)
+    @PostMapping
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<AccessRestrictionDTO> createOrUpdate(@RequestBody AccessRestrictionDTO dto) {
+        AccessRestriction e = AccessRestrictionServiceImpl.fromDto(dto);
+        AccessRestriction saved = service.saveOrUpdate(e);
+        return ResponseEntity.ok(AccessRestrictionServiceImpl.toDto(saved));
     }
 
-    @GetMapping("/weekly")
-    public ResponseEntity<List<AccessRestrictionDTO>> list(@RequestParam String role) {
-        return ResponseEntity.ok(
-                service.listForRole(role)
-                        .stream()
-                        .map(this::entityToDto)
-                        .collect(Collectors.toList()));
-    }
-
-    @DeleteMapping("/weekly/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.delete(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    private AccessRestriction dtoToEntity(CreateRestrictionDTO dto) {
-        AccessRestriction w = new AccessRestriction();
-        w.setRoleName(dto.getRoleName());
-        w.setStartDay(dto.getStartDay());
-        w.setStartTime(dto.getStartTime());
-        w.setEndDay(dto.getEndDay());
-        w.setEndTime(dto.getEndTime());
-        w.setEnabled(dto.isEnabled());
-        w.setDescription(dto.getDescription());
-        return w;
-    }
-
-    private AccessRestrictionDTO entityToDto(AccessRestriction w) {
-        AccessRestrictionDTO d = new AccessRestrictionDTO();
-        d.setId(w.getId());
-        d.setRoleName(w.getRoleName());
-        d.setStartDay(w.getStartDay());
-        d.setStartTime(w.getStartTime());
-        d.setEndDay(w.getEndDay());
-        d.setEndTime(w.getEndTime());
-        d.setEnabled(w.isEnabled());
-        d.setDescription(w.getDescription());
-        d.setCreatedAt(w.getCreatedAt());
-        d.setUpdatedAt(w.getUpdatedAt());
-        return d;
+    // Activar / desactivar (PATCH) -> actualiza enabled
+    @PatchMapping("/enabled/{id}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<AccessRestrictionDTO> toggleEnabled(@PathVariable Long id, @RequestParam boolean enabled) {
+        AccessRestriction r = service.getRestriction();
+        if (r == null || !r.getId().equals(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        r.setEnabled(enabled);
+        AccessRestriction saved = service.saveOrUpdate(r);
+        return ResponseEntity.ok(AccessRestrictionServiceImpl.toDto(saved));
     }
 }

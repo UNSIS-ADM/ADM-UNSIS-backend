@@ -1,14 +1,10 @@
 package com.unsis.admunsisbackend.service;
 
 import com.unsis.admunsisbackend.model.AccessRestriction;
-import java.util.List;
+import java.util.Optional;
 
 public interface AccessRestrictionService {
-    boolean isAccessAllowed(String roleName); // true = permitido ahora
-    List<AccessRestriction> listForRole(String roleName);
-    AccessRestriction create(AccessRestriction w);
-    AccessRestriction update(Long id, AccessRestriction w); 
-    void delete(Long id);
-    //AccessRestriction save(AccessRestriction w);
-    // otros métodos: delete, update, enable/disable
+    boolean isAccessAllowed(String roleName);
+    AccessRestriction getRestriction(); // devuelve la regla para ROLE_APPLICANT o null
+    AccessRestriction saveOrUpdate(AccessRestriction restriction);
 }

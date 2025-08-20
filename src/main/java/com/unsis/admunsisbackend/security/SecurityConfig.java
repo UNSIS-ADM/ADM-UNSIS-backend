@@ -43,9 +43,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/applicant/**").hasAuthority("ROLE_APPLICANT")
                 .requestMatchers("/api/admin/upload-results").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/admin/results").hasAnyAuthority("ROLE_ADMIN","ROLE_USER")
+                .requestMatchers("/api/admin/access-restriction/**").hasRole("ADMIN")
                 .anyRequest().authenticated());
-            http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-            //http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterAfter(roleAccessRestrictionFilter, JwtAuthenticationFilter.class);
 
         return http.build();
@@ -54,9 +54,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:4200")); // Cambia esto por tu URL de frontend
+        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:4200")); 
 //        configuration.setAllowedOrigins(Collections.singletonList("*")); // Cambia esto por tu URL de frontend
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList(
             "Authorization",
             "Content-Type",

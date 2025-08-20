@@ -1,21 +1,16 @@
 package com.unsis.admunsisbackend.dto;
 
-import java.time.LocalDateTime;
-
 public class AccessRestrictionDTO {
-    
     private Long id;
     private String roleName;
-    private int startDay;
-    private String startTime;
-    private int endDay;
-    private String endTime;
+    private String startDate; // "yyyy-MM-dd"
+    private String endDate; // "yyyy-MM-dd"
+    private String startTime; // "HH:mm"
+    private String endTime; // "HH:mm"
     private boolean enabled;
     private String description;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    
-    // getters / setters    
+
+    // getters / setters
     public Long getId() {
         return id;
     }
@@ -32,12 +27,20 @@ public class AccessRestrictionDTO {
         this.roleName = roleName;
     }
 
-    public int getStartDay() {
-        return startDay;
+    public String getStartDate() {
+        return startDate;
     }
 
-    public void setStartDay(int startDay) {
-        this.startDay = startDay;
+    public void setStartDate(String startDate) {
+        this.startDate = startDate;
+    }
+
+    public String getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
     }
 
     public String getStartTime() {
@@ -46,14 +49,6 @@ public class AccessRestrictionDTO {
 
     public void setStartTime(String startTime) {
         this.startTime = startTime;
-    }
-
-    public int getEndDay() {
-        return endDay;
-    }
-
-    public void setEndDay(int endDay) {
-        this.endDay = endDay;
     }
 
     public String getEndTime() {
@@ -78,21 +73,5 @@ public class AccessRestrictionDTO {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }

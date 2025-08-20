@@ -41,7 +41,7 @@ public class RoleAccessRestrictionFilter extends OncePerRequestFilter {
                 // bloquear acceso (403) a rutas protegidas
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.setContentType("application/json");
-                response.getWriter().write("{\"error\":\"Acceso temporalmente restringido para " + role + "\"}");
+                response.getWriter().write("{\"error\":\"Acceso temporalmente restringido\"}");
                 return;
             }
         }

@@ -1,84 +1,96 @@
 package com.unsis.admunsisbackend.service.impl;
 
+import com.unsis.admunsisbackend.dto.AccessRestrictionDTO;
 import com.unsis.admunsisbackend.model.AccessRestriction;
 import com.unsis.admunsisbackend.repository.AccessRestrictionRepository;
 import com.unsis.admunsisbackend.service.AccessRestrictionService;
-import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
-import java.time.*;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.List;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Optional;
+import java.time.LocalDate;
 
 @Service
 public class AccessRestrictionServiceImpl implements AccessRestrictionService {
 
     @Autowired
     private AccessRestrictionRepository repo;
-    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final ZoneId ZONE = ZoneId.of("America/Mexico_City"); // cambiar si necesitas otra zona
 
     @Override
     public boolean isAccessAllowed(String roleName) {
-        List<AccessRestriction> rules = repo.findByRoleNameAndEnabledTrue(roleName);
-        if (rules == null || rules.isEmpty())
-            return true; // sin reglas = permitido
-
-        ZonedDateTime now = ZonedDateTime.now(); // o usar zona configurable
-        for (AccessRestriction r : rules) {
-            if (isNowInWindow(now, r)) {
-                // Si cae dentro de alguna regla de restricción → no permitido
-                return false;
-            }
+        // Admin y User siempre tienen acceso
+        if ("ROLE_ADMIN".equals(roleName) || "ROLE_USER".equals(roleName)) {
+            return true;
         }
-        return true;
-    }
 
-    private boolean isNowInWindow(ZonedDateTime now, AccessRestriction r) {
-        // minuto de inicio de la semana (MONDAY 00:00)
-        int minutesPerWeek = 7 * 24 * 60;
-        LocalTime s = LocalTime.parse(r.getStartTime(), TIME_FMT);
-        LocalTime e = LocalTime.parse(r.getEndTime(), TIME_FMT);
-        int startOffset = (r.getStartDay() - 1) * 24 * 60 + s.getHour() * 60 + s.getMinute();
-        int endOffset = (r.getEndDay() - 1) * 24 * 60 + e.getHour() * 60 + e.getMinute();
-        if (endOffset <= startOffset)
-            endOffset += minutesPerWeek; // cruza semana
+        if (!"ROLE_APPLICANT".equals(roleName)) {
+            return true; // Otros roles sin restricción
+        }
 
-        DayOfWeek dow = now.getDayOfWeek();
-        int nowOffset = (dow.getValue() - 1) * 24 * 60 + now.getHour() * 60 + now.getMinute();
-        // si nowOffset < startOffset puede que la ventana sea la que empezó la semana
-        // pasada (wrap)
-        if (nowOffset < startOffset)
-            nowOffset += minutesPerWeek;
-        return nowOffset >= startOffset && nowOffset < endOffset;
-    }
+        Optional<AccessRestriction> opt = repo.findFirstByRoleName("ROLE_APPLICANT");
+        if (opt.isEmpty()) {
+            return true; // Si no hay regla configurada, acceso permitido
+        }
 
-    @Override
-    public List<AccessRestriction> listForRole(String roleName) {
-        return repo.findByRoleNameAndEnabledTrue(roleName);
-    }
+        AccessRestriction rule = opt.get();
 
-    @Override
-    public AccessRestriction create(AccessRestriction w) {
-        return repo.save(w);
+        if (!rule.isEnabled()) {
+            return true; // Si está desactivada, acceso permitido
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Validar fecha/hora
+        boolean inDateRange = !now.toLocalDate().isBefore(rule.getStartDate())
+                && !now.toLocalDate().isAfter(rule.getEndDate());
+
+        boolean inTimeRange = !now.toLocalTime().isBefore(rule.getStartTime())
+                && !now.toLocalTime().isAfter(rule.getEndTime());
+
+        return !(inDateRange && inTimeRange); // Si está en el rango → acceso denegado
     }
 
     @Override
-    public AccessRestriction update(Long id, AccessRestriction w) {
-        AccessRestriction existing = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Restricción no encontrada"));
-        existing.setRoleName(w.getRoleName());
-        existing.setStartDay(w.getStartDay());
-        existing.setStartTime(w.getStartTime());
-        existing.setEndDay(w.getEndDay());
-        existing.setEndTime(w.getEndTime());
-        existing.setEnabled(w.isEnabled());
-        existing.setDescription(w.getDescription());
-        return repo.save(existing);
+    public AccessRestriction getRestriction() {
+        return repo.findFirstByRoleName("ROLE_APPLICANT").orElse(null);
     }
 
     @Override
-    public void delete(Long id) {
-        repo.deleteById(id);
+    public AccessRestriction saveOrUpdate(AccessRestriction restriction) {
+        Optional<AccessRestriction> existing = repo.findFirstByRoleName("ROLE_APPLICANT");
+        if (existing.isPresent()) {
+            restriction.setId(existing.get().getId());
+        }
+        return repo.save(restriction);
+    }
+
+
+    public static AccessRestrictionDTO toDto(AccessRestriction e) {
+        if (e == null) return null;
+        AccessRestrictionDTO d = new AccessRestrictionDTO();
+        d.setId(e.getId());
+        d.setRoleName(e.getRoleName());
+        d.setStartDate(e.getStartDate().toString());
+        d.setEndDate(e.getEndDate().toString());
+        d.setStartTime(e.getStartTime().toString());
+        d.setEndTime(e.getEndTime().toString());
+        d.setEnabled(e.isEnabled());
+        d.setDescription(e.getDescription());
+        return d;
+    }
+
+    public static AccessRestriction fromDto(AccessRestrictionDTO d) {
+        AccessRestriction e = new AccessRestriction();
+        e.setId(d.getId());
+        e.setRoleName(d.getRoleName());
+        e.setStartDate(LocalDate.parse(d.getStartDate()));
+        e.setEndDate(LocalDate.parse(d.getEndDate()));
+        e.setStartTime(LocalTime.parse(d.getStartTime()));
+        e.setEndTime(LocalTime.parse(d.getEndTime()));
+        e.setEnabled(d.isEnabled());
+        e.setDescription(d.getDescription());
+        return e;
     }
 }

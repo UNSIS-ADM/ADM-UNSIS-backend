@@ -1,11 +1,14 @@
 package com.unsis.admunsisbackend.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "access_restrictions")
+@Table(name = "access_restriction")
 public class AccessRestriction {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -13,18 +16,17 @@ public class AccessRestriction {
     @Column(name = "role_name", nullable = false)
     private String roleName;
 
-    // 1 = MONDAY .. 7 = SUNDAY (DayOfWeek.getValue())
-    @Column(name = "start_day", nullable = false)
-    private int startDay;
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
+
+    @Column(name = "end_date", nullable = false)
+    private LocalDate endDate;
 
     @Column(name = "start_time", nullable = false)
-    private String startTime; // "HH:mm"
-
-    @Column(name = "end_day", nullable = false)
-    private int endDay;
+    private LocalTime startTime;
 
     @Column(name = "end_time", nullable = false)
-    private String endTime; // "HH:mm"
+    private LocalTime endTime;
 
     @Column(nullable = false)
     private boolean enabled = true;
@@ -33,6 +35,7 @@ public class AccessRestriction {
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
@@ -47,8 +50,7 @@ public class AccessRestriction {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // getters / setters ...
-   
+    // Getters and setters (generados manualmente)
     public Long getId() {
         return id;
     }
@@ -65,35 +67,35 @@ public class AccessRestriction {
         this.roleName = roleName;
     }
 
-    public int getStartDay() {
-        return startDay;
+    public LocalDate getStartDate() {
+        return startDate;
     }
 
-    public void setStartDay(int startDay) {
-        this.startDay = startDay;
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
     }
 
-    public String getStartTime() {
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public LocalTime getStartTime() {
         return startTime;
     }
 
-    public void setStartTime(String startTime) {
+    public void setStartTime(LocalTime startTime) {
         this.startTime = startTime;
     }
 
-    public int getEndDay() {
-        return endDay;
-    }
-
-    public void setEndDay(int endDay) {
-        this.endDay = endDay;
-    }
-
-    public String getEndTime() {
+    public LocalTime getEndTime() {
         return endTime;
     }
 
-    public void setEndTime(String endTime) {
+    public void setEndTime(LocalTime endTime) {
         this.endTime = endTime;
     }
 

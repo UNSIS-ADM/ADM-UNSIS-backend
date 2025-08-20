@@ -1,10 +1,10 @@
 package com.unsis.admunsisbackend.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import com.unsis.admunsisbackend.model.AccessRestriction;
-
-import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
 
 public interface AccessRestrictionRepository extends JpaRepository<AccessRestriction, Long> {
-    List<AccessRestriction > findByRoleNameAndEnabledTrue(String roleName);
+    // devolvemos la primera regla para el roleName (solo tienes una regla ROLE_APPLICANT)
+    Optional<AccessRestriction> findFirstByRoleName(String roleName);
 }

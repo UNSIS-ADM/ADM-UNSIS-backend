@@ -31,26 +31,7 @@ public class ApplicantServiceImpl implements ApplicantService {
 
     @Override
     public List<ApplicantResponseDTO> getAllApplicants() {
-<<<<<<< Updated upstream
         return repo.findAll().stream().map(this::toDto).collect(Collectors.toList());
-=======
-        List<Applicant> applicants = applicantRepository.findAll();
-
-        return applicants.stream().map(applicant -> {
-            ApplicantResponseDTO dto = new ApplicantResponseDTO();
-            dto.setId(applicant.getId());
-            dto.setFicha(applicant.getFicha()); // ← aquí
-            dto.setCurp(applicant.getCurp());
-            dto.setFullName(applicant.getUser().getFullName());
-            dto.setCareer(applicant.getCareer());
-            dto.setLocation(applicant.getLocation());
-            dto.setPhone(applicant.getPhone());
-            dto.setExamRoom(applicant.getExamRoom());
-            dto.setExamDate(applicant.getExamDate());
-            dto.setStatus(applicant.getStatus());
-            return dto;
-        }).collect(Collectors.toList());
->>>>>>> Stashed changes
     }
 
     @Override

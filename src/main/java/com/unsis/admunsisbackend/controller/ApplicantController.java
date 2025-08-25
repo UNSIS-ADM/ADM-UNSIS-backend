@@ -12,6 +12,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/applicants")
 public class ApplicantController {
+    @Autowired
+    private ApplicantService service;
+    
 
 
     @GetMapping

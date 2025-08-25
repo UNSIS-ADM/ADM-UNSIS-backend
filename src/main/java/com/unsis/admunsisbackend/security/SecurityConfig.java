@@ -24,6 +24,8 @@ import java.util.Collections;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+    @Autowired
+    private RoleAccessRestrictionFilter roleAccessRestrictionFilter;
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -37,12 +39,14 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                .requestMatchers("/api/user/**").hasAuthority("ROLE_USER")
+                .requestMatchers("/api/user/**")    .hasAuthority("ROLE_USER")
                 .requestMatchers("/api/applicant/**").hasAuthority("ROLE_APPLICANT")
                 .requestMatchers("/api/admin/upload-results").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/admin/results").hasAnyAuthority("ROLE_ADMIN","ROLE_USER")
-                .anyRequest().authenticated())
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .requestMatchers("/api/admin/access-restriction/**").hasRole("ADMIN")
+                .anyRequest().authenticated());
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(roleAccessRestrictionFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
@@ -50,8 +54,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:4200")); // Cambia esto por tu URL de frontend
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:4200")); 
+//        configuration.setAllowedOrigins(Collections.singletonList("*")); // Cambia esto por tu URL de frontend
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList(
             "Authorization",
             "Content-Type",

@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.List;
 
 public interface VacancyRepository extends JpaRepository<Vacancy, Long> {
-    Optional<Vacancy> findByCareerAndAdmissionYear(String career, int admissionYear);    
+    Optional<Vacancy> findByCareerAndAdmissionYear(String career, int admissionYear);
     List<Vacancy> findByAdmissionYear(int admissionYear);
-
+    
 }

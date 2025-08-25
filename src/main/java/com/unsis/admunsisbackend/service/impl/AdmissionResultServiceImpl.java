@@ -134,15 +134,15 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
             AdmissionResultDTO dto = new AdmissionResultDTO();
             dto.setId(ar.getId());
             dto.setApplicantId(ar.getApplicant().getId());
+            dto.setFicha(ar.getApplicant().getFicha());
             dto.setFullName(ar.getApplicant().getUser().getFullName());
             dto.setCareer(ar.getApplicant().getCareer());
             dto.setResult(ar.getResult());
             dto.setComment(ar.getComment());
             dto.setScore(ar.getScore());
             dto.setCreatedAt(ar.getCreatedAt());
+            dto.setLastLogin(ar.getApplicant().getUser().getLastLogin());
             return dto;
         }).collect(Collectors.toList());
     }
 }
-
-

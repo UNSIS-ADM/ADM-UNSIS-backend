@@ -13,9 +13,6 @@ import java.util.List;
 @RequestMapping("/api/applicants")
 public class ApplicantController {
 
-    @Autowired
-    private ApplicantService service;
-
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
@@ -37,7 +34,7 @@ public class ApplicantController {
     @PutMapping("/{curp}/career")
     @PreAuthorize("hasAuthority('ROLE_APPLICANT')")
     public ResponseEntity<?> changeCareerByCurp(
-            @PathVariable("curp") String curp,
+            @PathVariable("curp") String curp, 
             @RequestParam("career") String newCareer) {
         service.changeCareerByCurp(curp, newCareer);
         return ResponseEntity.noContent().build();

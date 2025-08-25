@@ -1,5 +1,6 @@
 package com.unsis.admunsisbackend.controller;
 
+
 import com.unsis.admunsisbackend.dto.VacancyDTO;
 import com.unsis.admunsisbackend.service.VacancyService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,23 +13,38 @@ import java.util.List;
 @RequestMapping("/api/admin/vacancies")
 public class VacancyController {
 
-    @Autowired private VacancyService service;
+    @Autowired
+    private VacancyService vacancyService;
 
-    /** Listar todos los cupos para un año (por defecto, año actual) */
+    /** Listar cupos por año (por defecto año actual) */
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public List<VacancyDTO> list(@RequestParam(required=false) Integer year) {
-        return service.listVacancies(year);
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
+    public List<VacancyDTO> list(@RequestParam(required = false) Integer year) {
+        return vacancyService.listVacancies(year);
     }
 
-    /** Crear o actualizar el cupo de una carrera para un año */
+    /** Crear o actualizar cupo de una carrera para un año */
     @PutMapping("/{career}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public VacancyDTO upsert(
-        @PathVariable String career,
-        @RequestParam(required=false) Integer year,
-        @RequestParam Integer limit
-    ) {
-        return service.upsertVacancy(career, year, limit);
+            @PathVariable String career,
+            @RequestParam(required = false) Integer year,
+            @RequestParam Integer limit) {
+        return vacancyService.upsertVacancy(career, year, limit);
+    }
+
+    /** Recalcula todos los contadores (accepted/pending/available) */
+    @PutMapping("/recalculate")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
+    public List<VacancyDTO> recalcAll(@RequestParam(required = false) Integer year) {
+        return vacancyService.recalculateAll(year);
+    }
+
+    /** Recalcula una carrera concreta */
+    @PutMapping("/recalculate/{career}")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
+    public VacancyDTO recalcOne(@PathVariable String career,
+            @RequestParam(required = false) Integer year) {
+        return vacancyService.recalculateOne(career, year);
     }
 }

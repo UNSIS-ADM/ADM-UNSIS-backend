@@ -29,8 +29,8 @@ public class VacancyController {
     public VacancyDTO upsert(
             @PathVariable String career,
             @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) Integer limitCount) {
-        return vacancyService.upsertVacancy(career, year, limitCount);
+            @RequestParam(required = false) Integer limit) {
+        return vacancyService.upsertVacancy(career, year, limit);
     }
 
     /** Recalcula todos los contadores (accepted/pending/available) */

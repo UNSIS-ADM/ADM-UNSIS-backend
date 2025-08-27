@@ -9,7 +9,7 @@ public class AdmissionResultDTO{
     private Long applicantId;
     private String fullName;
     private String career;
-    private String result;
+    private String status;
     private String comment;
     private BigDecimal score;
     private LocalDateTime createdAt;
@@ -57,12 +57,12 @@ public class AdmissionResultDTO{
         this.career = career;
     }
 
-    public String getResult() {
-        return result;
+    public String getStatus() {
+        return status;
     }
 
-    public void setResult(String result) {
-        this.result = result;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getComment() {

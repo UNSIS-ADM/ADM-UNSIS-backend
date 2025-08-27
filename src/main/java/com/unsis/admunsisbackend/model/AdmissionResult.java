@@ -18,7 +18,7 @@ public class AdmissionResult {
     private Applicant applicant;
 
     @Column(nullable = false)
-    private String result;
+    private String status;
 
     private String comment;
 
@@ -51,11 +51,12 @@ public class AdmissionResult {
         this.applicant = applicant;
     }
 
-    public String getResult() {
-        return result;
+    public String getStatus() {
+        return status;
     }
-    public void setResult(String result) {
-        this.result = result;
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getComment() {

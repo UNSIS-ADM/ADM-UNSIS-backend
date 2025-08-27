@@ -67,7 +67,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
         class RowData {
             int rowNum;
             String curp;
-            String resultado;
+            String status;
             String comentario;
             Double rawScore;
             Applicant applicant; // cache del applicant encontrado
@@ -107,7 +107,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
 
                 try {
                     rd.curp = row.getCell(0, MissingCellPolicy.CREATE_NULL_AS_BLANK).getStringCellValue().trim();
-                    rd.resultado = row.getCell(3, MissingCellPolicy.CREATE_NULL_AS_BLANK).getStringCellValue().trim();
+                    rd.status = row.getCell(3, MissingCellPolicy.CREATE_NULL_AS_BLANK).getStringCellValue().trim();
                     rd.comentario = row.getCell(4, MissingCellPolicy.CREATE_NULL_AS_BLANK).getStringCellValue().trim();
 
                     Cell scoreCell = row.getCell(5, MissingCellPolicy.CREATE_NULL_AS_BLANK);
@@ -122,9 +122,9 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                         // Total
                         totalByCareer.merge(career, 1, Integer::sum);
                         // Aceptados / Rechazados
-                        if (isAcceptedResult(rd.resultado)) {
+                        if (isAcceptedResult(rd.status)) {
                             acceptedByCareer.merge(career, 1, Integer::sum);
-                        } else if (isRejectedResult(rd.resultado)) {
+                        } else if (isRejectedResult(rd.status)) {
                             rejectedByCareer.merge(career, 1, Integer::sum);
                         } else {
                             // Si tu flujo considera otros estados, los tratamos como "otros"
@@ -159,7 +159,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
             for (RowData rd : rows) {
                 if (rd.applicant == null)
                     continue; // ya reportado como error
-                if (isAcceptedResult(rd.resultado)) {
+                if (isAcceptedResult(rd.status)) {
                     String career = rd.applicant.getCareer();
                     acceptCountsByCareer.merge(career, 1, Integer::sum);
                 }
@@ -206,13 +206,13 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                         continue; // ya reportado
 
                     // Actualizar status
-                    applicant.setStatus(rd.resultado);
+                    applicant.setStatus(rd.status);
                     applicantRepo.save(applicant);
 
                     // Guardar AdmissionResult
                     AdmissionResult ar = new AdmissionResult();
                     ar.setApplicant(applicant);
-                    ar.setResult(rd.resultado);
+                    ar.setStatus(rd.status);
                     ar.setComment(rd.comentario.isEmpty() ? null : rd.comentario);
 
                     if ("LICENCIATURA EN MEDICINA".equalsIgnoreCase(applicant.getCareer()) && rd.rawScore != null) {
@@ -283,7 +283,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
             dto.setFicha(ar.getApplicant().getFicha());
             dto.setFullName(ar.getApplicant().getUser().getFullName());
             dto.setCareer(ar.getApplicant().getCareer());
-            dto.setResult(ar.getResult());
+            dto.setStatus(ar.getStatus());
             dto.setComment(ar.getComment());
             dto.setScore(ar.getScore());
             dto.setCreatedAt(ar.getCreatedAt());

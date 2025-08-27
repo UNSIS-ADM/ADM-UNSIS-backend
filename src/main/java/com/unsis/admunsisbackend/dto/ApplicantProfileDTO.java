@@ -7,7 +7,7 @@ public class ApplicantProfileDTO {
     private String fullName;
     private Long ficha;
     private String career;
-    private String result;
+    private String status;
     private BigDecimal score;
     private LocalDateTime resultDate;
 
@@ -36,12 +36,12 @@ public class ApplicantProfileDTO {
         this.career = career;
     }
 
-    public String getResult() {
-        return result;
+    public String getStatus() {
+        return status;
     }
 
-    public void setResult(String result) {
-        this.result = result;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public BigDecimal getScore() {

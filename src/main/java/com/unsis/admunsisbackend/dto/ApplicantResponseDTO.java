@@ -10,7 +10,6 @@ public class ApplicantResponseDTO {
     private String fullName;
     private String career;
     private String location;
-    private String phone;
     private String examRoom;
     private LocalDateTime examDate;
     private String status;
@@ -63,14 +62,6 @@ public class ApplicantResponseDTO {
 
     public void setLocation(String location) {
         this.location = location;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
     }
 
     public String getExamRoom() {

@@ -51,7 +51,6 @@ public class ExcelServiceImpl implements ExcelService {
             "Lugar",
             "Aula/Sala de Cómputo",
             "Fecha Examen",
-            "Teléfono"
     };
 
     @Autowired
@@ -183,8 +182,7 @@ public class ExcelServiceImpl implements ExcelService {
         user = userRepository.save(user);
 
         // Extraer fecha de examen y teléfono
-        String examDateStr = getCellValue(row.getCell(6)); 
-        String phone = getCellValue(row.getCell(7)); 
+        String examDateStr = getCellValue(row.getCell(6));
 
         LocalDateTime examDate = null;
         if (!examDateStr.isBlank()) {
@@ -201,7 +199,6 @@ public class ExcelServiceImpl implements ExcelService {
         applicant.setCareer(career);
         applicant.setLocation(getCellValue(row.getCell(4)));
         applicant.setExamRoom(getCellValue(row.getCell(5)));
-        applicant.setPhone(phone);
         applicant.setExamDate(examDate);
         applicant.setExamAssigned(false);
         applicant.setStatus("PENDING");

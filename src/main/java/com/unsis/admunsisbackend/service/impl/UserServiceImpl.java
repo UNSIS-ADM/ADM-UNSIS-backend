@@ -55,7 +55,6 @@ public class UserServiceImpl implements UserService {
         dto.setId(user.getId());
         dto.setFullName(user.getFullName());
         dto.setCurp(applicant.getCurp());
-        dto.setPhone(applicant.getPhone());
         dto.setExamRoom(applicant.getExamRoom());
         dto.setExamDate(applicant.getExamDate());
         dto.setStatus(applicant.getStatus());

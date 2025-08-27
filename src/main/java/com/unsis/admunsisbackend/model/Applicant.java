@@ -24,7 +24,6 @@ public class Applicant {
     private String curp;
     private String career;
     private String location;
-    private String phone;
 
     @Column(name = "exam_assigned")
     private Boolean examAssigned = false;
@@ -91,14 +90,6 @@ public class Applicant {
 
     public void setLocation(String location) {
         this.location = location;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
     }
 
     public Boolean getExamAssigned() {

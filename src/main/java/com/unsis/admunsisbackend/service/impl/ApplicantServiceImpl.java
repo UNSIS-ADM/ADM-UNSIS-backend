@@ -66,7 +66,6 @@ public class ApplicantServiceImpl implements ApplicantService {
         dto.setFullName(a.getUser().getFullName());
         dto.setCareer(a.getCareer());
         dto.setLocation(a.getLocation());
-        dto.setPhone(a.getPhone());
         dto.setExamRoom(a.getExamRoom());
         dto.setExamDate(a.getExamDate());
         dto.setStatus(a.getStatus());

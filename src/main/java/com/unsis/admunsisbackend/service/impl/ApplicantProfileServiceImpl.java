@@ -32,7 +32,7 @@ public class ApplicantProfileServiceImpl implements ApplicantProfileService {
         dto.setFicha(applicant.getFicha());
         dto.setCareer(applicant.getCareer());
         if (last != null) {
-            dto.setResult(last.getResult());
+            dto.setStatus(last.getStatus());
             dto.setScore(last.getScore());
             dto.setResultDate(last.getCreatedAt());
         }

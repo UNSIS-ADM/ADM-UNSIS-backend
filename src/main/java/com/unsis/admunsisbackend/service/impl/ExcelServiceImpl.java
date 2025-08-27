@@ -7,7 +7,7 @@ import com.unsis.admunsisbackend.model.Applicant;
 import com.unsis.admunsisbackend.repository.UserRepository;
 import com.unsis.admunsisbackend.repository.RoleRepository;
 import com.unsis.admunsisbackend.repository.ApplicantRepository;
-import com.unsis.admunsisbackend.repository.VacancyRepository; // ← nuevo
+import com.unsis.admunsisbackend.repository.VacancyRepository; 
 import com.unsis.admunsisbackend.service.ExcelService;
 
 import org.apache.poi.ss.usermodel.*;
@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.transaction.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.Year; // ← para Year.now()
+import java.time.Year;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -33,14 +33,14 @@ public class ExcelServiceImpl implements ExcelService {
     private static final Pattern CURP_PATTERN = Pattern.compile("^[A-Z]{4}\\d{6}[HM][A-Z]{5}[A-Z0-9]{2}$");
 
     private static final List<String> VALID_CAREERS = Arrays.asList(
-            "LICENCIATURA EN ADMINISTRACION MUNICIPAL",
-            "LICENCIATURA EN ADMINISTRACION PÚBLICA",
+            "LICENCIATURA EN ADMINISTRACIÓN MUNICIPAL",
+            "LICENCIATURA EN ADMINISTRACIÓN PÚBLICA",
             "LICENCIATURA EN CIENCIAS BIOMÉDICAS",
             "LICENCIATURA EN CIENCIAS EMPRESARIALES",
             "LICENCIATURA EN ENFERMERÍA",
-            "LICENCIATURA EN INFORMATICA",
+            "LICENCIATURA EN INFORMÁTICA",
             "LICENCIATURA EN MEDICINA",
-            "LICENCIATURA EN NUTRICION",
+            "LICENCIATURA EN NUTRICIÓN",
             "LICENCIATURA EN ODONTOLOGÍA");
 
     private static final String[] EXPECTED_HEADERS = {
@@ -61,10 +61,10 @@ public class ExcelServiceImpl implements ExcelService {
 
     @Autowired
     private ApplicantRepository applicantRepository;
-
+/**
     @Autowired
-    private VacancyRepository vacancyRepository; // ← inyectado
-
+    private VacancyRepository vacancyRepository;
+*/
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -133,6 +133,15 @@ public class ExcelServiceImpl implements ExcelService {
 
     @Transactional
     private void processRow(Row row, Role applicantRole) {
+        // Ficha primero (necesaria para la validación de username)
+        Long fichaExcel;
+        try {
+            fichaExcel = Long.valueOf(getCellValue(row.getCell(0)));
+        } catch (Exception e) {
+            throw new RuntimeException("Número de ficha inválido");
+        }
+        String fichaStr = fichaExcel.toString();
+
         // Validar CURP
         String curp = getCellValue(row.getCell(3));
         if (!CURP_PATTERN.matcher(curp).matches()) {
@@ -145,19 +154,24 @@ public class ExcelServiceImpl implements ExcelService {
             throw new RuntimeException("Carrera no válida");
         }
 
-        // Validar usuario existente no exista ya por CURP
+        /* Validar usuario existente no exista ya por CURP
         if (userRepository.existsByUsername(curp)) {
             throw new RuntimeException("El usuario con CURP ya está registrado");
+        }*/
+        // Validar usuario existente por username (ficha)
+        if (userRepository.existsByUsername(fichaStr)) {
+            throw new RuntimeException("El usuario (ficha) ya está registrado: " + fichaStr);
         }
 
-        // Validar aspirante existente no exista ya por CURP
+        // Validar aspirante existente por CURP
         if (applicantRepository.existsByCurp(curp)) {
             throw new RuntimeException("Ya existe un usuario con esta CURP");
         }
-
+    /*
         Long fichaExcel = Long.valueOf(getCellValue(row.getCell(0)));
         String fichaStr = fichaExcel.toString();
-
+    */
+/*
         // ** INTEGRACIÓN DE VALIDACIÓN DE VACANTES: **
         int currentYear = Year.now().getValue();
         long inscritos = applicantRepository.countByCareerAndAdmissionYear(career, currentYear);
@@ -171,7 +185,7 @@ public class ExcelServiceImpl implements ExcelService {
             throw new RuntimeException("Cupo agotado para " + career);
         }
         // ** fin de la integración **
-
+*/
         // Crear usuario
         User user = new User();
         user.setUsername(fichaStr); // login = ficha
@@ -181,14 +195,20 @@ public class ExcelServiceImpl implements ExcelService {
         user.setRoles(Set.of(applicantRole));
         user = userRepository.save(user);
 
-        // Extraer fecha de examen y teléfono
+        // Extraer fecha de examen
         String examDateStr = getCellValue(row.getCell(6));
 
         LocalDateTime examDate = null;
         if (!examDateStr.isBlank()) {
+            try{
             examDate = LocalDateTime.parse(
                     examDateStr,
                     DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            } catch (Exception ex) {
+                // Si falla el parseo estricto, lo dejamos null (o logueamos)
+                logger.warn("No se pudo parsear Fecha Examen '{}' en fila {}", examDateStr, row.getRowNum() + 1);
+                examDate = null;
+            }
         }
 
         // Crear aspirante
@@ -202,7 +222,8 @@ public class ExcelServiceImpl implements ExcelService {
         applicant.setExamDate(examDate);
         applicant.setExamAssigned(false);
         applicant.setStatus("PENDING");
-        applicant.setAdmissionYear(currentYear);
+//      applicant.setAdmissionYear(currentYear);
+        applicant.setAdmissionYear(Year.now().getValue());
         applicantRepository.save(applicant);
     }
 

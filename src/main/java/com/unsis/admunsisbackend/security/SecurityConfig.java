@@ -33,18 +33,30 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                .requestMatchers("/api/user/**")    .hasAuthority("ROLE_USER")
-                .requestMatchers("/api/applicant/**").hasAuthority("ROLE_APPLICANT")
-                .requestMatchers("/api/admin/upload-results").hasAuthority("ROLE_ADMIN")
-                .requestMatchers("/api/admin/results").hasAnyAuthority("ROLE_ADMIN","ROLE_USER")
-                .requestMatchers("/api/admin/access-restriction/**").hasRole("ADMIN")
-                .anyRequest().authenticated());
+                .csrf(csrf -> csrf.disable())// Desactivar CSRF para pruebas con Postman
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // 1 .requestMatchers("/auth/**").permitAll()
+                        // 5 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+                        // 6 .requestMatchers("/api/user/**") .hasAuthority("ROLE_USER")
+                        // 7 .requestMatchers("/api/applicant/**").hasAuthority("ROLE_APPLICANT")
+                        // 2 .requestMatchers("/api/admin/upload-results").hasAuthority("ROLE_ADMIN")
+                        // 3 .requestMatchers("/api/admin/results").hasAnyAuthority("ROLE_ADMIN","ROLE_USER")
+                        // 4 .requestMatchers("/api/admin/access-restriction/**").hasRole("ADMIN")
+
+                        .requestMatchers("/auth/**").permitAll()
+                        // Reglas específicas primero
+                        .requestMatchers("/api/admin/upload-results").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/admin/access-restriction/**").hasRole("ADMIN")
+
+                        .requestMatchers("/api/admin/results").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")
+                        .requestMatchers("/api/admin/change-career/requests").hasAnyRole("ADMIN", "USER")
+
+                        // Regla general después, más permisiva si corresponde
+                        .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")
+                        .requestMatchers("/api/user/**").hasAuthority("ROLE_USER")
+                        .requestMatchers("/api/applicant/**").hasAuthority("ROLE_APPLICANT")
+                        .anyRequest().authenticated());
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterAfter(roleAccessRestrictionFilter, JwtAuthenticationFilter.class);
 
@@ -54,22 +66,21 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:4200")); 
-//        configuration.setAllowedOrigins(Collections.singletonList("*")); // Cambia esto por tu URL de frontend
+        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
+        // configuration.setAllowedOrigins(Collections.singletonList("*")); // Cambia
+        // esto por tu URL de frontend
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList(
-            "Authorization",
-            "Content-Type",
-            "X-Requested-With",
-            "Accept",
-            "Origin",
-            "Access-Control-Request-Method",
-            "Access-Control-Request-Headers"
-        ));
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "Accept",
+                "Origin",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers"));
         configuration.setExposedHeaders(Arrays.asList(
-            "Access-Control-Allow-Origin",
-            "Access-Control-Allow-Credentials"
-        ));
+                "Access-Control-Allow-Origin",
+                "Access-Control-Allow-Credentials"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
@@ -82,10 +93,10 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
-    // Configuración del PasswordEncoder para encriptar contraseñas en la BD
+
+    // PasswordEncoder para contraseñas en la BD
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 }
-

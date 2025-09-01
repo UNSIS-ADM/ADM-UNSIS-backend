@@ -34,7 +34,7 @@ public class VacancyServiceImpl implements VacancyService {
                 .map(VacancyDTO::fromEntity)
                 .collect(Collectors.toList());
     }
-
+    
     @Override
     @Transactional
     public VacancyDTO upsertVacancy(String career, Integer year, Integer limitCount) {
@@ -45,64 +45,48 @@ public class VacancyServiceImpl implements VacancyService {
 
         var opt = vacancyRepo.findByCareerAndAdmissionYear(career, y);
         Vacancy v;
+
         if (opt.isPresent()) {
-            // Vacante existente: aplicamos comportamiento de SUMA al limitCount
+            // Vacante existente: ahora REEMPLAZA el limitCount
             v = opt.get();
 
             if (limitCount != null) {
-                // Contadores actuales para validar que no se reduzca el límite por debajo de lo
-                // ya comprometido
+                // Contadores actuales
                 long accepted = applicantRepo.countByCareerAndAdmissionYearAndStatus(career, y, "ACEPTADO");
                 long pending = requestRepo.countPendingByNewCareerAndYear(career, y);
 
-                int currentLimit = v.getLimitCount() != null ? v.getLimitCount() : 0;
-                int nuevaLimit = safeAddInts(currentLimit, limitCount); // suma segura
-
-                // Validación: no permitir que el nuevo límite sea menor que
-                // aceptados+pendientes
-                if ((long) nuevaLimit < accepted + pending) {
+                // Validar que el nuevo límite no sea menor que aceptados+pendientes
+                if ((long) limitCount < accepted + pending) {
                     throw new IllegalArgumentException(String.format(
                             "El nuevo limitCount (%d) no puede ser menor que la suma de aceptados y pendientes (%d).",
-                            nuevaLimit, accepted + pending));
+                            limitCount, accepted + pending));
                 }
 
-                v.setLimitCount(nuevaLimit);
-                // Recalcular accepted/pending/available y persistir desde aquí
+                v.setLimitCount(limitCount);
+
+                // Recalcular contadores con el nuevo límite
                 actualizarContadores(v, y);
-            } else {
-                // No se cambia limitCount; solo asegurar availableSlots inicializado si es null
-                if (v.getAvailableSlots() == null) {
-                    v.setAvailableSlots(v.getLimitCount() != null ? v.getLimitCount() : 0);
-                    vacancyRepo.save(v);
-                }
             }
 
         } else {
-            // Vacante nueva: asignar (NO sumar) el limitCount entrante
+            // Vacante nueva: asignar directamente el limitCount entrante
             v = new Vacancy();
             v.setCareer(career);
             v.setAdmissionYear(y);
 
             int initialLimit = limitCount != null ? limitCount : 0;
-
-            // Validación extra: no permitir negative (ya validado arriba, pero por
-            // seguridad aquí también)
             if (initialLimit < 0) {
                 throw new IllegalArgumentException("limitCount no puede ser negativo.");
             }
 
             v.setLimitCount(initialLimit);
-            // En vacante nueva accepted/pending = 0, así que available = initialLimit
             v.setAcceptedCount(0);
             v.setPendingCount(0);
             v.setAvailableSlots(initialLimit);
 
-            // Guardar la nueva vacante
             v = vacancyRepo.save(v);
         }
 
-        // Nota: actualizarContadores ya hace un save() internamente, así que aquí
-        // devolvemos el estado actual de 'v' (ya persistido).
         return VacancyDTO.fromEntity(v);
     }
 

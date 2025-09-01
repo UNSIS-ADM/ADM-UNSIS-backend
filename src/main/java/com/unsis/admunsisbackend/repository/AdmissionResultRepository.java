@@ -9,4 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface AdmissionResultRepository extends JpaRepository<AdmissionResult, Long> {
     //Trae el más reciente (ORDER BY createdAt DESC LIMIT 1)
     Optional<AdmissionResult> findTopByApplicantOrderByCreatedAtDesc(Applicant applicant);
+    
 }

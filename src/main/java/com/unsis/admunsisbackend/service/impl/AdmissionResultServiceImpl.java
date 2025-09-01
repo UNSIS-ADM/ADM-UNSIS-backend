@@ -137,120 +137,117 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                     errors.add(new ExcelUploadResponse.ExcelError(rd.rowNum, ex.getMessage()));
                 }
             }
-            // Si hay errores críticos encontrados en lectura (p.ej aspirantes faltantes),
-            // devolvemos sin procesar nada (puedes cambiar esto si prefieres ignorar solo
-            // las filas malas).
-            /*
-             * boolean hasMissingApplicants = errors.stream()
-             * .anyMatch(e -> e.getError().contains("No existe aspirante"));
-             * if (hasMissingApplicants) {
-             * resp.setSuccess(false);
-             * resp.
-             * setMessage("Existen aspirantes no encontrados. Corrige el archivo o la base de datos."
-             * );
-             * resp.setErrors(errors);
-             * return resp;
-             * }
-             */
 
-            // 2) Validación de cupos por carrera
-            // Contar cuántos "ACEPTADOS" habría por carrera en este lote
+            // Procesar filas (guardar Applicant.status y AdmissionResult)
             Map<String, Integer> acceptCountsByCareer = new HashMap<>();
             for (RowData rd : rows) {
                 if (rd.applicant == null)
-                    continue; // ya reportado como error
+                    continue;
                 if (isAcceptedResult(rd.result)) {
                     String career = rd.applicant.getCareer();
                     acceptCountsByCareer.merge(career, 1, Integer::sum);
                 }
             }
-
-            // Verificar vacantes para cada carrera involucrada
-            // Validación de cupos: para cada carrera verificar availableSlots >=
-            // totalByCareer (Aceptados+Rechazados)
-            List<String> insufficient = new ArrayList<>();
-            int year = Year.now().getValue(); // o el año que uses para admissionYear
-            for (Map.Entry<String, Integer> e : totalByCareer.entrySet()) {
-                String career = e.getKey();
-                int needed = e.getValue(); // total (aceptados + rechazados + otros resultados)
-                Optional<Vacancy> optVac = vacancyRepo.findByCareerAndAdmissionYear(career, year);
-                if (optVac.isEmpty()) {
-                    insufficient.add(String.format("%s (no existe vacante definida, requiere %d)", career, needed));
-                    continue;
-                }
-                Vacancy v = optVac.get();
-                int available = v.getAvailableSlots() != null ? v.getAvailableSlots() : 0;
-                if (available < needed) {
-                    insufficient.add(
-                            String.format("%s (cupos disponibles: %d, requeridos: %d)", career, available, needed));
-                }
-            }
-
-            if (!insufficient.isEmpty()) {
-                resp.setSuccess(false);
-                resp.setMessage(
-                        "❌ No hay cupos suficientes para las siguientes carreras: " + String.join("; ", insufficient)
-                                + ". Agrega cupos y vuelve a intentar.");
-                resp.setErrors(errors);
-                return resp;
-            }
+            // === fin cambio ===
 
             // Procesar filas (guardar Applicant.status y AdmissionResult)
-            // Llevamos un contador por carrera de cuántos se procesaron correctamente
-            Map<String, Integer> processedByCareer = new HashMap<>();
-
+            // === cambio: loop de guardado idempotente (actualiza en vez de crear
+            // duplicados) ===
+            // Procesar filas (guardar Applicant.status y AdmissionResult)
             for (RowData rd : rows) {
                 try {
                     Applicant applicant = rd.applicant;
                     if (applicant == null)
                         continue; // ya reportado
 
-                    // Actualizar status
+                    // Siempre actualizamos el status del Applicant
                     applicant.setStatus(rd.result);
                     applicantRepo.save(applicant);
 
-                    // Guardar AdmissionResult
-                    AdmissionResult ar = new AdmissionResult();
-                    ar.setApplicant(applicant);
-                    ar.setStatus(rd.result);
-                    ar.setComment(rd.comentario.isEmpty() ? null : rd.comentario);
+                    // Buscar AdmissionResult previo
+                    Optional<AdmissionResult> optPrev = resultRepo.findTopByApplicantOrderByCreatedAtDesc(applicant);
 
-                    if ("LICENCIATURA EN MEDICINA".equalsIgnoreCase(applicant.getCareer()) && rd.rawScore != null) {
-                        ar.setScore(BigDecimal.valueOf(rd.rawScore));
+                    // Normalizar valores
+                    String newStatus = rd.result;
+                    String newComment = rd.comentario.isEmpty() ? null : rd.comentario;
+                    BigDecimal newScore = (rd.rawScore != null
+                            && "LICENCIATURA EN MEDICINA".equalsIgnoreCase(applicant.getCareer()))
+                                    ? BigDecimal.valueOf(rd.rawScore)
+                                    : null;
+
+                    if (optPrev.isPresent()) {
+                        AdmissionResult prev = optPrev.get();
+
+                        // Compara todos los campos relevantes
+                        boolean sameStatus = Objects.equals(prev.getStatus(), newStatus);
+                        boolean sameComment = Objects.equals(prev.getComment(), newComment);
+                        boolean sameScore = Objects.equals(prev.getScore(), newScore);
+                        boolean sameCareer = Objects.equals(applicant.getCareer(), applicant.getCareer());
+                        boolean sameCurp = Objects.equals(applicant.getCurp(), rd.curp);
+                        boolean sameName = Objects.equals(applicant.getUser().getFullName(),
+                                applicant.getUser().getFullName());
+
+                        if (sameCurp && sameName && sameCareer && sameStatus && sameComment && sameScore) {
+                            // No hay cambios -> no hacemos nada
+                            continue;
+                        } else {
+                            // Hay cambios -> actualizamos el registro existente
+                            prev.setStatus(newStatus);
+                            prev.setComment(newComment);
+                            prev.setScore(newScore);
+                            resultRepo.save(prev);
+                            processed++;
+                        }
+                    } else {
+                        // No existe resultado previo -> creamos uno nuevo
+                        AdmissionResult ar = new AdmissionResult();
+                        ar.setApplicant(applicant);
+                        ar.setStatus(newStatus);
+                        ar.setComment(newComment);
+                        ar.setScore(newScore);
+                        resultRepo.save(ar);
+                        processed++;
                     }
-
-                    resultRepo.save(ar);
-                    processed++;
-
-                    // contar procesados por carrera (para descontar después)
-                    String career = applicant.getCareer();
-                    processedByCareer.merge(career, 1, Integer::sum);
-
                 } catch (Exception ex) {
                     errors.add(new ExcelUploadResponse.ExcelError(rd.rowNum, ex.getMessage()));
                 }
             }
-
-            // Después de procesar, descontar processedByCareer de availableSlots (solo los
-            // que realmente se guardaron)
-            for (Map.Entry<String, Integer> e : processedByCareer.entrySet()) {
+        
+            // === cambio: Actualizar/crear vacancies.limit_count automáticamente con totals
+            // por carrera ===
+            int year = ADMISSION_YEAR;
+            for (Map.Entry<String, Integer> e : totalByCareer.entrySet()) {
                 String career = e.getKey();
-                int dec = e.getValue();
+                int tot = e.getValue();
+                int acc = acceptedByCareer.getOrDefault(career, 0);
+                int rej = rejectedByCareer.getOrDefault(career, 0);
+                int pending = Math.max(0, tot - acc - rej);
+
                 Vacancy v = vacancyRepo.findByCareerAndAdmissionYear(career, year)
-                        .orElseThrow(() -> new RuntimeException(
-                                "Vacante no encontrada al actualizar contadores para " + career));
-                int currentAvailable = v.getAvailableSlots() != null ? v.getAvailableSlots() : 0;
-                int newAvailable = currentAvailable - dec;
-                if (newAvailable < 0)
-                    newAvailable = 0;
-                v.setAvailableSlots(newAvailable);
-                // También puedes actualizar acceptedCount/rejectedCount si deseas:
-                int accepted = acceptedByCareer.getOrDefault(career, 0);
-                int rejected = rejectedByCareer.getOrDefault(career, 0);
-                v.setAcceptedCount(Math.max(0, v.getAcceptedCount() + accepted)); // ejemplo de cómo actualizar counters
-                v.setPendingCount(Math.max(0, v.getPendingCount())); // si aplica
-                vacancyRepo.save(v);
+                        .orElseGet(() -> {
+                            Vacancy nv = new Vacancy();
+                            nv.setCareer(career);
+                            nv.setAdmissionYear(year);
+                            // inicializar campos obligatorios
+                            nv.setLimitCount(0);
+                            nv.setAcceptedCount(0);
+                            nv.setPendingCount(0);
+                            nv.setAvailableSlots(0);
+                            return nv;
+                        });
+
+                // Guardar el total del archivo en limit_count (reemplaza el valor actual)
+                v.setLimitCount(tot); // === cambio:
+
+                // (Opcional) También actualizar contadores para reflejar el archivo
+                v.setAcceptedCount(acc); // === cambio:
+                v.setPendingCount(pending); // === cambio:
+                // available_slots lo dejamos consistente con limit - accepted (opcional)
+                v.setAvailableSlots(Math.max(0, tot - acc)); // === cambio:
+
+                vacancyRepo.save(v); // === cambio:
             }
+            // === fin cambio ===
 
         } catch (Exception ex) {
             resp.setSuccess(false);
@@ -292,23 +289,3 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
         }).collect(Collectors.toList());
     }
 }
-
-
-/*Implementar
- * Race conditions: si existe concurrencia (varios procesos subiendo
- * simultáneamente), todavía puede haber overbooking entre la validación y el
- * save() final. Para evitarlo:
- * 
- * Usa bloqueo pesimista (@Lock(PESSIMISTIC_WRITE) en un método del repo o
- * SELECT FOR UPDATE) cuando leas la Vacancy para validación y actualización, o
- * 
- * Implementa una actualización atómica en la DB (por ejemplo un UPDATE vacancy
- * SET available_slots = available_slots - :n WHERE career = :c AND
- * admission_year = :y AND available_slots >= :n y comprobar que rowsAffected ==
- * 1), o
- * 
- * Usa restricciones a nivel DB (CHECK / triggers) para que no permita valores
- * negativos.
- * Nutri esta liberando vacantes si hace un cambio de carrera y fue rechazado no
- * no deberia liberar la vacante, solo ocupar a la carrera que solicite.
- */

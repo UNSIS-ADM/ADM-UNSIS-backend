@@ -32,6 +32,7 @@ public class ApplicantProfileServiceImpl implements ApplicantProfileService {
         dto.setFicha(applicant.getFicha());
         dto.setCareer(applicant.getCareer());
         if (last != null) {
+            dto.setCareerAtResult(last.getCareerAtResult()); // carrera en el momento del resultado
             dto.setStatus(last.getStatus());
             dto.setScore(last.getScore());
             dto.setResultDate(last.getCreatedAt());

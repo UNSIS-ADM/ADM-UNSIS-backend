@@ -34,7 +34,7 @@ public class VacancyServiceImpl implements VacancyService {
                 .map(VacancyDTO::fromEntity)
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     @Transactional
     public VacancyDTO upsertVacancy(String career, Integer year, Integer limitCount) {
@@ -61,11 +61,25 @@ public class VacancyServiceImpl implements VacancyService {
                             "El nuevo limitCount (%d) no puede ser menor que la suma de aceptados y pendientes (%d).",
                             limitCount, accepted + pending));
                 }
+                // Calculamos diferencia entre nuevo límite y límite actual (oldLimit)
+                int oldLimit = v.getLimitCount() != null ? v.getLimitCount() : 0;
+                int delta = limitCount - oldLimit;
 
+                // Actualizamos el limitCount
                 v.setLimitCount(limitCount);
 
+                // Según tu requerimiento: available_slots será la diferencia positiva entre
+                // nuevo y viejo límite
+                // (si delta < 0 dejamos 0)
+                int newAvailable = Math.max(0, delta);
+                v.setAvailableSlots(newAvailable);
+
                 // Recalcular contadores con el nuevo límite
-                actualizarContadores(v, y);
+                //actualizarContadores(v, y);
+
+                // NO llamamos a actualizarContadores ni tocamos acceptedCount/pendingCount aquí
+                v = vacancyRepo.save(v);
+
             }
 
         } else {
@@ -105,7 +119,7 @@ public class VacancyServiceImpl implements VacancyService {
             throw new IllegalArgumentException("El parámetro 'limitCount' no puede ser negativo.");
         }
     }
-    
+
     @Override
     @Transactional
     public List<VacancyDTO> recalculateAll(Integer year) {
@@ -136,7 +150,8 @@ public class VacancyServiceImpl implements VacancyService {
         v.setAcceptedCount((int) accepted);
         v.setPendingCount((int) pending);
 
-        // Recalcular availableSlots siempre en base al limitCount y los contadores actuales
+        // Recalcular availableSlots siempre en base al limitCount y los contadores
+        // actuales
         int limit = v.getLimitCount() != null ? v.getLimitCount() : 0;
         long availableCalc = (long) limit - accepted - pending;
         int available = availableCalc <= 0 ? 0 : safeLongToInt(availableCalc);
@@ -157,16 +172,19 @@ public class VacancyServiceImpl implements VacancyService {
         return (int) value;
     }
 
-/*
- * Suma dos ints de forma segura evitando overflow; si overflow, devuelve Integer.MAX_VALUE o MIN_VALUE.
- */
+    /*
+     * Suma dos ints de forma segura evitando overflow; si overflow, devuelve
+     * Integer.MAX_VALUE o MIN_VALUE.
+     */
 
     private int safeAddInts(Integer a, Integer b) {
         int va = a != null ? a : 0;
         int vb = b != null ? b : 0;
         long sum = (long) va + (long) vb;
-        if (sum > Integer.MAX_VALUE) return Integer.MAX_VALUE;
-        if (sum < Integer.MIN_VALUE) return Integer.MIN_VALUE;
+        if (sum > Integer.MAX_VALUE)
+            return Integer.MAX_VALUE;
+        if (sum < Integer.MIN_VALUE)
+            return Integer.MIN_VALUE;
         return (int) sum;
     }
 }

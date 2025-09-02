@@ -7,6 +7,7 @@ public class ApplicantResponseDTO {
     private Long id;
     private Long ficha;
     private String curp;
+    private String careerAtResult;
     private String fullName;
     private String career;
     private String location;
@@ -38,6 +39,14 @@ public class ApplicantResponseDTO {
 
     public void setCurp(String curp) {
         this.curp = curp;
+    }
+
+    public String getCareerAtResult() {
+        return careerAtResult;
+    }
+
+    public void setCareerAtResult(String careerAtResult) {
+        this.careerAtResult = careerAtResult;
     }
 
     public String getFullName() {

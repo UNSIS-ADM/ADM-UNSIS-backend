@@ -16,6 +16,9 @@ public class AdmissionResult {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "applicant_id", nullable = false)
     private Applicant applicant;
+ 
+    @Column(name = "career_at_result")
+    private String careerAtResult;
 
     @Column(nullable = false)
     private String status;
@@ -51,6 +54,14 @@ public class AdmissionResult {
         this.applicant = applicant;
     }
 
+    public String getCareerAtResult() {
+        return careerAtResult;
+    }
+
+    public void setCareerAtResult(String careerAtResult) {
+        this.careerAtResult = careerAtResult;
+    }
+    
     public String getStatus() {
         return status;
     }

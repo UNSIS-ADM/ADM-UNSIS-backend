@@ -25,6 +25,9 @@ public class Applicant {
     private String career;
     private String location;
 
+    @Column(name = "career_at_result")
+    private String careerAtResult;
+
     @Column(name = "exam_assigned")
     private Boolean examAssigned = false;
 

@@ -195,6 +195,9 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                             prev.setStatus(newStatus);
                             prev.setComment(newComment);
                             prev.setScore(newScore);
+                            
+                            // opcional: actualizar o no el snapshot según tu política
+                            prev.setCareerAtResult(applicant.getCareer());
                             resultRepo.save(prev);
                             processed++;
                         }
@@ -205,6 +208,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                         ar.setStatus(newStatus);
                         ar.setComment(newComment);
                         ar.setScore(newScore);
+                        ar.setCareerAtResult(applicant.getCareer()); // <-- snapshot aquí
                         resultRepo.save(ar);
                         processed++;
                     }
@@ -219,9 +223,9 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
             for (Map.Entry<String, Integer> e : totalByCareer.entrySet()) {
                 String career = e.getKey();
                 int tot = e.getValue();
-                int acc = acceptedByCareer.getOrDefault(career, 0);
-                int rej = rejectedByCareer.getOrDefault(career, 0);
-                int pending = Math.max(0, tot - acc - rej);
+                int acc = acceptedByCareer.getOrDefault(career, 0); // aceptados detectados en el archivo
+                int rej = rejectedByCareer.getOrDefault(career, 0); // rechazados -> los guardamos en pending_count
+                //int pending = Math.max(0, tot - acc - rej);
 
                 Vacancy v = vacancyRepo.findByCareerAndAdmissionYear(career, year)
                         .orElseGet(() -> {
@@ -235,17 +239,39 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                             nv.setAvailableSlots(0);
                             return nv;
                         });
+                        boolean changed = false;
+
+                if (!Objects.equals(v.getLimitCount(), tot)) {
+                    v.setLimitCount(tot);
+                    changed = true;
+                }
+
+                if (!Objects.equals(v.getAcceptedCount(), acc)) {
+                    v.setAcceptedCount(acc);
+                    changed = true;
+                }
+
+                // Guardamos los rechazados en pending_count (según tu petición)
+                if (!Objects.equals(v.getPendingCount(), rej)) {
+                    v.setPendingCount(rej);
+                    changed = true;
+                }
+
+                // NOTA: no modificamos v.setAvailableSlots(...) ni hacemos otros cálculos aquí.
+                if (changed) {
+                    vacancyRepo.save(v);
+                }
 
                 // Guardar el total del archivo en limit_count (reemplaza el valor actual)
-                v.setLimitCount(tot); // === cambio:
+                //v.setLimitCount(tot); // === cambio:
 
                 // (Opcional) También actualizar contadores para reflejar el archivo
-                v.setAcceptedCount(acc); // === cambio:
-                v.setPendingCount(pending); // === cambio:
+                //v.setAcceptedCount(acc); // === cambio:
+                //v.setPendingCount(pending); // === cambio:
                 // available_slots lo dejamos consistente con limit - accepted (opcional)
-                v.setAvailableSlots(Math.max(0, tot - acc)); // === cambio:
+                //v.setAvailableSlots(Math.max(0, tot - acc)); // === cambio:
 
-                vacancyRepo.save(v); // === cambio:
+                //vacancyRepo.save(v); // === cambio:
             }
             // === fin cambio ===
 
@@ -280,6 +306,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
             dto.setFicha(ar.getApplicant().getFicha());
             dto.setFullName(ar.getApplicant().getUser().getFullName());
             dto.setCareer(ar.getApplicant().getCareer());
+            dto.setCareerAtResult(ar.getCareerAtResult()); // 👈 aquí
             dto.setStatus(ar.getStatus());
             dto.setComment(ar.getComment());
             dto.setScore(ar.getScore());

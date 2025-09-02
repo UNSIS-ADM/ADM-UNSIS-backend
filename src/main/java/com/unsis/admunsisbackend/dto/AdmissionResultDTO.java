@@ -3,18 +3,18 @@ package com.unsis.admunsisbackend.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public class AdmissionResultDTO{
+public class AdmissionResultDTO {
     private Long id;
     private long ficha;
     private Long applicantId;
+    private String careerAtResult;
     private String fullName;
     private String career;
     private String status;
     private String comment;
     private BigDecimal score;
     private LocalDateTime createdAt;
-    private LocalDateTime lastLogin;
-    
+    private LocalDateTime lastLogin; 
 
     // Getters and Setters
     public Long getId() {
@@ -25,6 +25,14 @@ public class AdmissionResultDTO{
         this.id = id;
     }
 
+    public Long getFicha() {
+        return ficha;
+    }
+
+    public void setFicha(Long ficha) {
+        this.ficha = ficha;
+    }
+
     public Long getApplicantId() {
         return applicantId;
     }
@@ -32,13 +40,13 @@ public class AdmissionResultDTO{
     public void setApplicantId(Long applicantId) {
         this.applicantId = applicantId;
     }
-    
-    public Long getFicha() {
-        return ficha;
+
+    public String getCareerAtResult() {
+        return careerAtResult;
     }
 
-    public void setFicha(Long ficha) {
-        this.ficha = ficha;
+    public void setCareerAtResult(String careerAtResult) {
+        this.careerAtResult = careerAtResult;
     }
 
     public String getFullName() {

@@ -58,7 +58,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
 
     @Override
     @Transactional
-    public ExcelUploadResponse processResultsExcel(MultipartFile file) {
+    public ExcelUploadResponse processResultsExcel(MultipartFile file, Integer admissionYear) {
         ExcelUploadResponse resp = new ExcelUploadResponse();
         List<ExcelUploadResponse.ExcelError> errors = new ArrayList<>();
         int total = 0, processed = 0;
@@ -78,6 +78,17 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
         Map<String, Integer> totalByCareer = new HashMap<>();
         Map<String, Integer> acceptedByCareer = new HashMap<>();
         Map<String, Integer> rejectedByCareer = new HashMap<>();
+
+        // elegir año efectivo (si viene del front lo usamos, si no el por defecto)
+        int year = (admissionYear != null) ? admissionYear : ADMISSION_YEAR;
+
+        // validación básica (opcional)
+        int current = Year.now().getValue();
+        if (year < 2000 || year > current + 1) {
+            resp.setSuccess(false);
+            resp.setMessage("Año de admisión inválido: " + year);
+            return resp;
+        }
 
         try (Workbook wb = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = wb.getSheetAt(0);
@@ -148,12 +159,9 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                     acceptCountsByCareer.merge(career, 1, Integer::sum);
                 }
             }
-            // === fin cambio ===
-
             // Procesar filas (guardar Applicant.status y AdmissionResult)
             // === cambio: loop de guardado idempotente (actualiza en vez de crear
             // duplicados) ===
-            // Procesar filas (guardar Applicant.status y AdmissionResult)
             for (RowData rd : rows) {
                 try {
                     Applicant applicant = rd.applicant;
@@ -177,11 +185,11 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
 
                     if (optPrev.isPresent()) {
                         AdmissionResult prev = optPrev.get();
-
                         // Compara todos los campos relevantes
                         boolean sameStatus = Objects.equals(prev.getStatus(), newStatus);
                         boolean sameComment = Objects.equals(prev.getComment(), newComment);
                         boolean sameScore = Objects.equals(prev.getScore(), newScore);
+                        
                         boolean sameCareer = Objects.equals(applicant.getCareer(), applicant.getCareer());
                         boolean sameCurp = Objects.equals(applicant.getCurp(), rd.curp);
                         boolean sameName = Objects.equals(applicant.getUser().getFullName(),
@@ -195,9 +203,10 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                             prev.setStatus(newStatus);
                             prev.setComment(newComment);
                             prev.setScore(newScore);
-                            
+
                             // opcional: actualizar o no el snapshot según tu política
                             prev.setCareerAtResult(applicant.getCareer());
+                            prev.setAdmissionYear(year);
                             resultRepo.save(prev);
                             processed++;
                         }
@@ -208,7 +217,8 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                         ar.setStatus(newStatus);
                         ar.setComment(newComment);
                         ar.setScore(newScore);
-                        ar.setCareerAtResult(applicant.getCareer()); // <-- snapshot aquí
+                        ar.setCareerAtResult(applicant.getCareer());
+                        ar.setAdmissionYear(year);
                         resultRepo.save(ar);
                         processed++;
                     }
@@ -216,30 +226,25 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                     errors.add(new ExcelUploadResponse.ExcelError(rd.rowNum, ex.getMessage()));
                 }
             }
-        
-            // === cambio: Actualizar/crear vacancies.limit_count automáticamente con totals
-            // por carrera ===
-            int year = ADMISSION_YEAR;
+
             for (Map.Entry<String, Integer> e : totalByCareer.entrySet()) {
                 String career = e.getKey();
                 int tot = e.getValue();
                 int acc = acceptedByCareer.getOrDefault(career, 0); // aceptados detectados en el archivo
                 int rej = rejectedByCareer.getOrDefault(career, 0); // rechazados -> los guardamos en pending_count
-                //int pending = Math.max(0, tot - acc - rej);
 
                 Vacancy v = vacancyRepo.findByCareerAndAdmissionYear(career, year)
                         .orElseGet(() -> {
                             Vacancy nv = new Vacancy();
                             nv.setCareer(career);
                             nv.setAdmissionYear(year);
-                            // inicializar campos obligatorios
                             nv.setLimitCount(0);
                             nv.setAcceptedCount(0);
                             nv.setPendingCount(0);
                             nv.setAvailableSlots(0);
                             return nv;
                         });
-                        boolean changed = false;
+                boolean changed = false;
 
                 if (!Objects.equals(v.getLimitCount(), tot)) {
                     v.setLimitCount(tot);
@@ -257,23 +262,10 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                     changed = true;
                 }
 
-                // NOTA: no modificamos v.setAvailableSlots(...) ni hacemos otros cálculos aquí.
                 if (changed) {
                     vacancyRepo.save(v);
                 }
-
-                // Guardar el total del archivo en limit_count (reemplaza el valor actual)
-                //v.setLimitCount(tot); // === cambio:
-
-                // (Opcional) También actualizar contadores para reflejar el archivo
-                //v.setAcceptedCount(acc); // === cambio:
-                //v.setPendingCount(pending); // === cambio:
-                // available_slots lo dejamos consistente con limit - accepted (opcional)
-                //v.setAvailableSlots(Math.max(0, tot - acc)); // === cambio:
-
-                //vacancyRepo.save(v); // === cambio:
             }
-            // === fin cambio ===
 
         } catch (Exception ex) {
             resp.setSuccess(false);
@@ -306,10 +298,11 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
             dto.setFicha(ar.getApplicant().getFicha());
             dto.setFullName(ar.getApplicant().getUser().getFullName());
             dto.setCareer(ar.getApplicant().getCareer());
-            dto.setCareerAtResult(ar.getCareerAtResult()); // 👈 aquí
+            dto.setCareerAtResult(ar.getCareerAtResult());
             dto.setStatus(ar.getStatus());
             dto.setComment(ar.getComment());
             dto.setScore(ar.getScore());
+            dto.setAdmissionYear(ar.getAdmissionYear());
             dto.setCreatedAt(ar.getCreatedAt());
             dto.setLastLogin(ar.getApplicant().getUser().getLastLogin());
             return dto;

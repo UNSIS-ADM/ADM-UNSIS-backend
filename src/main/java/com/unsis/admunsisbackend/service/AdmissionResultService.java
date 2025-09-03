@@ -6,6 +6,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface AdmissionResultService {
-    ExcelUploadResponse processResultsExcel(MultipartFile file);
+    ExcelUploadResponse processResultsExcel(MultipartFile file, Integer admissionYear);
     List<AdmissionResultDTO> getAllResults();   
 }

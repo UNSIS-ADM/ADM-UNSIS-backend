@@ -21,12 +21,14 @@ public class AdmissionResultController {
     // Nuevo endpoint de carga de resultados
     @PostMapping("/upload-results")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<ExcelUploadResponse> uploadResults(@RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(service.processResultsExcel(file));
+    public ResponseEntity<ExcelUploadResponse> uploadResults(
+        @RequestParam("file") MultipartFile file, 
+        @RequestParam(value = "year", required = false) Integer admissionYear) {
+        return ResponseEntity.ok(service.processResultsExcel(file, admissionYear));
     }
 
     // Listar resultados (admin y user)
-    @GetMapping("/results")
+    @GetMapping("/results") 
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
     public ResponseEntity<List<AdmissionResultDTO>> getResults() {
         return ResponseEntity.ok(service.getAllResults());

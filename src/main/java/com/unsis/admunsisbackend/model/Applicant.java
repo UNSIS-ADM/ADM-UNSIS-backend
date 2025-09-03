@@ -43,14 +43,13 @@ public class Applicant {
     private Integer admissionYear;
     
     public Applicant() {
-        this.admissionYear = Year.now().getValue(); // Asignación automática del año actual
+        this.admissionYear = Year.now().getValue();  
     }
 
     public Integer getAdmissionYear() {
         return this.admissionYear;
     }
-    // Getters y Setters
-    // Setter con lógica para asignar año actual si es null
+    
     public void setAdmissionYear(Integer admissionYear) {
         this.admissionYear = (admissionYear != null) ? admissionYear : Year.now().getValue();
     }

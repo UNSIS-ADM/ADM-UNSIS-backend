@@ -3,6 +3,9 @@ package com.unsis.admunsisbackend.model;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.Year;
+
+import org.apache.xmlbeans.impl.xb.xsdschema.Public;
 
 @Entity
 @Table(name = "admission_results")
@@ -94,7 +97,7 @@ public class AdmissionResult {
     }
 
     public void setAdmissionYear(Integer admissionYear) {
-        this.admissionYear = admissionYear;
+        this.admissionYear = (admissionYear != null) ? admissionYear : Year.now().getValue();
     }
 
     public LocalDateTime getCreatedAt() {
@@ -104,5 +107,4 @@ public class AdmissionResult {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-    // No necesitamos setter para createdAt porque se gestiona automáticamente
 }

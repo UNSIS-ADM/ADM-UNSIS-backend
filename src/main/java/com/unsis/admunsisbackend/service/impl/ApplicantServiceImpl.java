@@ -17,21 +17,23 @@ import java.util.stream.Collectors;
 
 @Service
 public class ApplicantServiceImpl implements ApplicantService {
-    //Hace el cambio directo sin solicitud
-    //Usado por el admin en el panel de control
-    //Usado por el servicio de correo para aceptar solicitudes
-            
+
     @Autowired
     private ApplicantRepository applicantRepo;
-    
-    @Autowired private VacancyRepository vacancyRepo;
 
     @Autowired
-    private ApplicantRepository repo;
+    private VacancyRepository vacancyRepo;
 
     @Override
-    public List<ApplicantResponseDTO> getAllApplicants() {
-        return repo.findAll().stream().map(this::toDto).collect(Collectors.toList());
+    @Transactional // read-only impl via jakarta.transaction.Transactional (for lazy fetch safety)
+    public List<ApplicantResponseDTO> getAllApplicants(Integer year) {
+        List<Applicant> list;
+        if (year != null) {
+            list = applicantRepo.findByAdmissionYear(year);
+        } else {
+            list = applicantRepo.findAll();
+        }
+        return list.stream().map(this::toDto).collect(Collectors.toList());
     }
 
     @Override
@@ -44,15 +46,15 @@ public class ApplicantServiceImpl implements ApplicantService {
         List<Applicant> results;
 
         if (ficha != null) {
-            results = repo.findByFicha(ficha).map(List::of).orElse(List.of());
+            results = applicantRepo.findByFicha(ficha).map(List::of).orElse(List.of());
         } else if (curp != null && !curp.isBlank()) {
-            results = repo.findByCurpContainingIgnoreCase(curp);
+            results = applicantRepo.findByCurpContainingIgnoreCase(curp);
         } else if (career != null && !career.isBlank()) {
-            results = repo.findByCareerContainingIgnoreCase(career);
+            results = applicantRepo.findByCareerContainingIgnoreCase(career);
         } else if (fullName != null && !fullName.isBlank()) {
-            results = repo.findByUser_FullNameContainingIgnoreCase(fullName);
+            results = applicantRepo.findByUser_FullNameContainingIgnoreCase(fullName);
         } else {
-            results = repo.findAll();
+            results = applicantRepo.findAll();
         }
 
         return results.stream().map(this::toDto).collect(Collectors.toList());
@@ -63,43 +65,43 @@ public class ApplicantServiceImpl implements ApplicantService {
         dto.setId(a.getId());
         dto.setFicha(a.getFicha());
         dto.setCurp(a.getCurp());
-        dto.setFullName(a.getUser().getFullName());
+        dto.setFullName(a.getUser() != null ? a.getUser().getFullName() : null);
         dto.setCareer(a.getCareer());
         dto.setLocation(a.getLocation());
         dto.setExamRoom(a.getExamRoom());
         dto.setExamDate(a.getExamDate());
         dto.setStatus(a.getStatus());
-        dto.setLastLogin(a.getUser().getLastLogin());
+        dto.setAdmissionYear(a.getAdmissionYear()); // ya lo tenías, lo dejamos
+        dto.setLastLogin(a.getUser() != null ? a.getUser().getLastLogin() : null);
         return dto;
     }
 
     @Override
-  @Transactional
-  public void changeCareerByCurp(String curp, String newCareer) {
-      // 1) Localiza al aspirante por CURP
-    Applicant a = applicantRepo.findByCurp(curp)
-        .orElseThrow(() -> new RuntimeException("No existe aspirante con CURP: " + curp));
-    int year = a.getAdmissionYear();
+    @Transactional
+    public void changeCareerByCurp(String curp, String newCareer) {
+        // 1) Localiza al aspirante por CURP
+        Applicant a = applicantRepo.findByCurp(curp)
+                .orElseThrow(() -> new RuntimeException("No existe aspirante con CURP: " + curp));
+        int year = a.getAdmissionYear();
 
-    // 2) Validaciones (por ejemplo, no medicina, cupo disponible, no misma carrera)
-    if ("LICENCIATURA EN MEDICINA".equalsIgnoreCase(newCareer)) {
-      throw new RuntimeException("No puedes cambiarte a Medicina");
-    }
-    // 2) Validaciones (por ejemplo, no medicina, cupo disponible, no misma carrera)
-    if (a.getCareer().equalsIgnoreCase(newCareer)) {
-      throw new RuntimeException("Ya estás inscrito en esa carrera");
-    }
+        // 2) Validaciones (por ejemplo, no medicina, cupo disponible, no misma carrera)
+        if ("LICENCIATURA EN MEDICINA".equalsIgnoreCase(newCareer)) {
+            throw new RuntimeException("No puedes cambiarte a Medicina");
+        }
+        if (a.getCareer().equalsIgnoreCase(newCareer)) {
+            throw new RuntimeException("Ya estás inscrito en esa carrera");
+        }
 
-    // validar cupos
-    long inscritos = applicantRepo.countByCareerAndAdmissionYear(newCareer, year);
-    Vacancy vac = vacancyRepo.findByCareerAndAdmissionYear(newCareer, year)
-        .orElseThrow(() -> new RuntimeException("Vacantes no configuradas para " + newCareer + " en " + year));
-    if (inscritos >= vac.getLimitCount()) {
-      throw new RuntimeException("Cupo agotado para " + newCareer);
-    }
+        // validar cupos
+        long inscritos = applicantRepo.countByCareerAndAdmissionYear(newCareer, year);
+        Vacancy vac = vacancyRepo.findByCareerAndAdmissionYear(newCareer, year)
+                .orElseThrow(() -> new RuntimeException("Vacantes no configuradas para " + newCareer + " en " + year));
+        if (inscritos >= vac.getLimitCount()) {
+            throw new RuntimeException("Cupo agotado para " + newCareer);
+        }
 
-    // todo OK → actualizar
-    a.setCareer(newCareer);
-    applicantRepo.save(a);
-  }
+        // todo OK → actualizar
+        a.setCareer(newCareer);
+        applicantRepo.save(a);
+    }
 }

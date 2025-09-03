@@ -16,7 +16,7 @@ public class AdmissionResult {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "applicant_id", nullable = false)
     private Applicant applicant;
- 
+
     @Column(name = "career_at_result")
     private String careerAtResult;
 
@@ -27,6 +27,9 @@ public class AdmissionResult {
 
     @Column(precision = 5, scale = 2)
     private BigDecimal score;
+
+    @Column(name = "admission_year", nullable = false)
+    private Integer admissionYear;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -61,7 +64,7 @@ public class AdmissionResult {
     public void setCareerAtResult(String careerAtResult) {
         this.careerAtResult = careerAtResult;
     }
-    
+
     public String getStatus() {
         return status;
     }
@@ -73,15 +76,25 @@ public class AdmissionResult {
     public String getComment() {
         return comment;
     }
+
     public void setComment(String comment) {
         this.comment = comment;
     }
+
     public BigDecimal getScore() {
         return score;
     }
 
     public void setScore(BigDecimal score) {
         this.score = score;
+    }
+
+    public Integer getAdmissionYear() {
+        return admissionYear;
+    }
+
+    public void setAdmissionYear(Integer admissionYear) {
+        this.admissionYear = admissionYear;
     }
 
     public LocalDateTime getCreatedAt() {

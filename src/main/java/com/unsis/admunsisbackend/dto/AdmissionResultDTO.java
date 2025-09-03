@@ -13,8 +13,10 @@ public class AdmissionResultDTO {
     private String status;
     private String comment;
     private BigDecimal score;
+    private Integer admissionYear;
     private LocalDateTime createdAt;
-    private LocalDateTime lastLogin; 
+    private LocalDateTime lastLogin;
+
 
     // Getters and Setters
     public Long getId() {
@@ -87,6 +89,14 @@ public class AdmissionResultDTO {
 
     public void setScore(BigDecimal score) {
         this.score = score;
+    }
+
+    public Integer getAdmissionYear() {
+        return admissionYear;
+    }
+
+    public void setAdmissionYear(Integer admissionYear) {
+        this.admissionYear = admissionYear;
     }
 
     public LocalDateTime getCreatedAt() {

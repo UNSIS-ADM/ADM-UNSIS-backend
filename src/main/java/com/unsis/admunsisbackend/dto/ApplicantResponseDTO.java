@@ -7,13 +7,14 @@ public class ApplicantResponseDTO {
     private Long id;
     private Long ficha;
     private String curp;
-    private String careerAtResult;
+    private String careerAtResult; 
     private String fullName;
     private String career;
     private String location;
     private String examRoom;
     private LocalDateTime examDate;
     private String status;
+    private Integer admissionYear;
     private LocalDateTime lastLogin;
 
     // Getters y Setters
@@ -95,6 +96,14 @@ public class ApplicantResponseDTO {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+    
+    public Integer getAdmissionYear() {
+        return admissionYear;
+    }
+
+    public void setAdmissionYear(Integer admissionYear) {
+        this.admissionYear = admissionYear;
     }
 
     public LocalDateTime getLastLogin() {

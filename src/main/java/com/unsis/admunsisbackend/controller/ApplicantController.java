@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/applicants")
+@RequestMapping("/api/applicants") 
 public class ApplicantController {
     @Autowired
     private ApplicantService service;
@@ -19,8 +19,9 @@ public class ApplicantController {
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
-    public ResponseEntity<List<ApplicantResponseDTO>> getAll() {
-        return ResponseEntity.ok(service.getAllApplicants());
+    public ResponseEntity<List<ApplicantResponseDTO>> getAll(
+        @RequestParam(value = "year", required = false) Integer year) {
+        return ResponseEntity.ok(service.getAllApplicants(year));
     }
 
     @GetMapping("/search")

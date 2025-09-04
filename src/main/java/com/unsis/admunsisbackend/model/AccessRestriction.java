@@ -16,17 +16,11 @@ public class AccessRestriction {
     @Column(name = "role_name", nullable = false)
     private String roleName;
 
-    @Column(name = "start_date", nullable = false)
-    private LocalDate startDate;
+    @Column(name = "activation_date")
+    private LocalDate activationDate;
 
-    @Column(name = "end_date", nullable = false)
-    private LocalDate endDate;
-
-    @Column(name = "start_time", nullable = false)
-    private LocalTime startTime;
-
-    @Column(name = "end_time", nullable = false)
-    private LocalTime endTime;
+    @Column(name = "activation_time")
+    private LocalTime activationTime;
 
     @Column(nullable = false)
     private boolean enabled = true;
@@ -67,36 +61,20 @@ public class AccessRestriction {
         this.roleName = roleName;
     }
 
-    public LocalDate getStartDate() {
-        return startDate;
+    public LocalDate getActivationDate() {
+        return activationDate;
     }
 
-    public void setStartDate(LocalDate startDate) {
-        this.startDate = startDate;
+    public void setActivationDate(LocalDate activationDate) {
+        this.activationDate = activationDate;
     }
 
-    public LocalDate getEndDate() {
-        return endDate;
+    public LocalTime getActivationTime() {
+        return activationTime;
     }
 
-    public void setEndDate(LocalDate endDate) {
-        this.endDate = endDate;
-    }
-
-    public LocalTime getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(LocalTime startTime) {
-        this.startTime = startTime;
-    }
-
-    public LocalTime getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(LocalTime endTime) {
-        this.endTime = endTime;
+    public void setActivationTime(LocalTime activationTime) {
+        this.activationTime = activationTime;
     }
 
     public boolean isEnabled() {

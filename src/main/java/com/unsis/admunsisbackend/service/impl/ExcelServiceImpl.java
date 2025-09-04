@@ -7,7 +7,6 @@ import com.unsis.admunsisbackend.model.Applicant;
 import com.unsis.admunsisbackend.repository.UserRepository;
 import com.unsis.admunsisbackend.repository.RoleRepository;
 import com.unsis.admunsisbackend.repository.ApplicantRepository;
-import com.unsis.admunsisbackend.repository.VacancyRepository; 
 import com.unsis.admunsisbackend.service.ExcelService;
 
 import org.apache.poi.ss.usermodel.*;

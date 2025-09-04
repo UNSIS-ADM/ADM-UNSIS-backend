@@ -171,20 +171,4 @@ public class VacancyServiceImpl implements VacancyService {
             return Integer.MIN_VALUE;
         return (int) value;
     }
-
-    /*
-     * Suma dos ints de forma segura evitando overflow; si overflow, devuelve
-     * Integer.MAX_VALUE o MIN_VALUE.
-     */
-
-    private int safeAddInts(Integer a, Integer b) {
-        int va = a != null ? a : 0;
-        int vb = b != null ? b : 0;
-        long sum = (long) va + (long) vb;
-        if (sum > Integer.MAX_VALUE)
-            return Integer.MAX_VALUE;
-        if (sum < Integer.MIN_VALUE)
-            return Integer.MIN_VALUE;
-        return (int) sum;
-    }
 }

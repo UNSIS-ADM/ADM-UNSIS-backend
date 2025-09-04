@@ -4,7 +4,6 @@ import com.unsis.admunsisbackend.dto.AccessRestrictionDTO;
 import com.unsis.admunsisbackend.model.AccessRestriction;
 import com.unsis.admunsisbackend.repository.AccessRestrictionRepository;
 import com.unsis.admunsisbackend.service.AccessRestrictionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
@@ -22,17 +21,10 @@ public class AccessRestrictionServiceImpl implements AccessRestrictionService {
 
     // Constructor: inyecta repo y acepta clock opcional (fallback a
     // systemDefaultZone)
-    @Autowired
     public AccessRestrictionServiceImpl(AccessRestrictionRepository repo, Clock clock) {
         this.repo = repo;
         this.clock = (clock == null) ? Clock.systemDefaultZone() : clock;
     }
-
-    // Si prefieres no inyectar Clock desde Spring, puedes añadir este constructor
-    // alterno:
-    // public AccessRestrictionServiceImpl(AccessRestrictionRepository repo) {
-    // this(repo, Clock.systemDefaultZone());
-    // }
 
     @Override
     public boolean isAccessAllowed(String roleName) {

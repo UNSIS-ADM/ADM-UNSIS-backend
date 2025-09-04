@@ -25,7 +25,8 @@ public class ExcelController {
             return ResponseEntity.badRequest().body(response);
         }
 
-        if (!file.getOriginalFilename().endsWith(".xlsx")) {
+        String filename = file.getOriginalFilename();
+        if (filename == null || !filename.endsWith(".xlsx")) {
             ExcelUploadResponse response = new ExcelUploadResponse();
             response.setSuccess(false);
             response.setMessage("Por favor suba un archivo Excel (.xlsx)");

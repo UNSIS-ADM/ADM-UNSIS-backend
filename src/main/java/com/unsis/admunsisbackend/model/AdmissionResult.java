@@ -5,8 +5,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Year;
 
-import org.apache.xmlbeans.impl.xb.xsdschema.Public;
-
 @Entity
 @Table(name = "admission_results")
 public class AdmissionResult {

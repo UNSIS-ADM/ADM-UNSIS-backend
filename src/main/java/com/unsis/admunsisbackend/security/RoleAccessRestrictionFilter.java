@@ -1,6 +1,7 @@
 package com.unsis.admunsisbackend.security;
 
 import com.unsis.admunsisbackend.service.AccessRestrictionService;
+import org.springframework.lang.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,7 +19,9 @@ public class RoleAccessRestrictionFilter extends OncePerRequestFilter {
     private AccessRestrictionService accessRestrictionService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain chain)
             throws ServletException, IOException {
 
         String path = request.getRequestURI();

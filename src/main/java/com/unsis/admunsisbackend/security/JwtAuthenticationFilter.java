@@ -1,7 +1,7 @@
 package com.unsis.admunsisbackend.security;
 
+import org.springframework.lang.NonNull;
 import java.io.IOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,9 +33,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // Método que se ejecuta para cada solicitud HTTP
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
             logger.info("URL solicitada: " + request.getRequestURL());

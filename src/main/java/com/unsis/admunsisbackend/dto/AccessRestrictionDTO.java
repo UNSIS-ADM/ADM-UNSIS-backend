@@ -3,10 +3,8 @@ package com.unsis.admunsisbackend.dto;
 public class AccessRestrictionDTO {
     private Long id;
     private String roleName;
-    private String startDate; // "yyyy-MM-dd"
-    private String endDate; // "yyyy-MM-dd"
-    private String startTime; // "HH:mm"
-    private String endTime; // "HH:mm"
+    private String activationDate; 
+    private String activationTime; 
     private boolean enabled;
     private String description;
 
@@ -27,38 +25,22 @@ public class AccessRestrictionDTO {
         this.roleName = roleName;
     }
 
-    public String getStartDate() {
-        return startDate;
+    public String getActivationDate() {
+        return activationDate;
     }
 
-    public void setStartDate(String startDate) {
-        this.startDate = startDate;
+    public void setActivationDate(String activationDate) {
+        this.activationDate = activationDate;
     }
 
-    public String getEndDate() {
-        return endDate;
+    public String getActivationTime() {
+        return activationTime;
     }
 
-    public void setEndDate(String endDate) {
-        this.endDate = endDate;
+    public void setActivationTime(String activationTime) {
+        this.activationTime = activationTime;
     }
-
-    public String getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(String startTime) {
-        this.startTime = startTime;
-    }
-
-    public String getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(String endTime) {
-        this.endTime = endTime;
-    }
-
+    
     public boolean isEnabled() {
         return enabled;
     }
@@ -75,3 +57,4 @@ public class AccessRestrictionDTO {
         this.description = description;
     }
 }
+

@@ -17,118 +17,101 @@ public class AccessRestrictionServiceImpl implements AccessRestrictionService {
     private static final String ROLE_ADMIN = "ROLE_ADMIN";
     private static final String ROLE_USER = "ROLE_USER";
 
-    @Autowired
-    private AccessRestrictionRepository repo;
+    private final AccessRestrictionRepository repo;
+    private final Clock clock;
 
-    // Clock para testabilidad / zona (usa zona del servidor por defecto)
-    private final Clock clock = Clock.systemDefaultZone();
+    // Constructor: inyecta repo y acepta clock opcional (fallback a
+    // systemDefaultZone)
+    @Autowired
+    public AccessRestrictionServiceImpl(AccessRestrictionRepository repo, Clock clock) {
+        this.repo = repo;
+        this.clock = (clock == null) ? Clock.systemDefaultZone() : clock;
+    }
+
+    // Si prefieres no inyectar Clock desde Spring, puedes añadir este constructor
+    // alterno:
+    // public AccessRestrictionServiceImpl(AccessRestrictionRepository repo) {
+    // this(repo, Clock.systemDefaultZone());
+    // }
 
     @Override
     public boolean isAccessAllowed(String roleName) {
-        // Roles sin restricción
-        if (ROLE_ADMIN.equals(roleName) || ROLE_USER.equals(roleName)) {
+        if (ROLE_ADMIN.equals(roleName) || ROLE_USER.equals(roleName))
             return true;
-        }
-        if (!ROLE_APPLICANT.equals(roleName)) {
+        if (!ROLE_APPLICANT.equals(roleName))
             return true;
-        }
 
         Optional<AccessRestriction> opt = repo.findFirstByRoleName(ROLE_APPLICANT);
-        if (opt.isEmpty()) {
-            return true; // sin regla configurada => permitir
-        }
+        if (opt.isEmpty())
+            return true; // sin regla => permitir
 
         AccessRestriction rule = opt.get();
 
-        // defensivo: si está deshabilitada -> permitir
+        // NUEVO: si la regla está deshabilitada -> DENEGAR
         if (!rule.isEnabled()) {
-            return true;
+            return false;
         }
 
         LocalDate nowDate = LocalDate.now(clock);
         LocalTime nowTime = LocalTime.now(clock);
 
-        LocalDate startDate = rule.getStartDate();
-        LocalDate endDate = rule.getEndDate();
-        LocalTime startTime = rule.getStartTime();
-        LocalTime endTime = rule.getEndTime();
+        LocalDate activationDate = rule.getActivationDate();
+        LocalTime activationTime = rule.getActivationTime();
 
-        boolean dateDefined = startDate != null && endDate != null;
-        boolean timeDefined = startTime != null && endTime != null;
+        boolean dateDefined = activationDate != null;
+        boolean timeDefined = activationTime != null;
 
-        boolean inDateRange = false;
-        if (dateDefined) {
-            inDateRange = !nowDate.isBefore(startDate) && !nowDate.isAfter(endDate);
-        }
-
-        boolean inTimeRange = false;
-        if (timeDefined) {
-            if (!startTime.isAfter(endTime)) {
-                // rango normal (ej. 09:00 - 17:00)
-                inTimeRange = !nowTime.isBefore(startTime) && !nowTime.isAfter(endTime);
-            } else {
-                // rango que cruza medianoche (ej. 22:00 - 02:00)
-                inTimeRange = !nowTime.isBefore(startTime) || !nowTime.isAfter(endTime);
-            }
-        }
-
-        // Lógica:
-        // - Si están definidas fecha y hora: si estamos dentro de AMBAS => denegar
-        // (false).
-        // - Si sólo fecha está definida: si estamos dentro de la fecha => denegar.
-        // - Si sólo hora está definida: si estamos dentro de la hora => denegar.
-        // - Si nada definido: permitir.
         if (dateDefined && timeDefined) {
-            return !(inDateRange && inTimeRange);
+            LocalDateTime now = LocalDateTime.of(nowDate, nowTime);
+            LocalDateTime activation = LocalDateTime.of(activationDate, activationTime);
+            return !now.isBefore(activation);
         } else if (dateDefined) {
-            return !inDateRange;
+            return !nowDate.isBefore(activationDate);
         } else if (timeDefined) {
-            return !inTimeRange;
+            return !nowTime.isBefore(activationTime);
         } else {
+            // habilitada pero sin moment configurado -> permitir
             return true;
         }
     }
 
     @Override
     public AccessRestriction getRestriction() {
-        // Devuelve la entidad si existe, o null si no hay regla.
+        // devuelve la primera regla para ROLE_APPLICANT o null
         return repo.findFirstByRoleName(ROLE_APPLICANT).orElse(null);
     }
 
     @Override
     public AccessRestriction saveOrUpdate(AccessRestriction restriction) {
+        // Aseguramos roleName por defecto si el DTO/cliente no lo envió
+        if (restriction.getRoleName() == null || restriction.getRoleName().isBlank()) {
+            restriction.setRoleName(ROLE_APPLICANT);
+        }
+
         Optional<AccessRestriction> existing = repo.findFirstByRoleName(ROLE_APPLICANT);
         if (existing.isPresent()) {
+            // si ya existe, utilizar su id (actualización)
             restriction.setId(existing.get().getId());
         }
-        // Aquí podrías validar (startDate <= endDate) si lo deseas
         return repo.save(restriction);
     }
 
-    // -----------------------------------------------------
-    // DTO helpers: toDto ahora devuelve un DTO con campos null
-    // en lugar de devolver directamente null cuando no hay entidad.
-    // -----------------------------------------------------
+    // DTO helpers
     public static AccessRestrictionDTO toDto(AccessRestriction e) {
         AccessRestrictionDTO d = new AccessRestrictionDTO();
         if (e == null) {
-            // Si no hay regla configurada, devolver DTO con campos null
-            d.setId(null);
             d.setRoleName(ROLE_APPLICANT);
-            d.setStartDate(null);
-            d.setEndDate(null);
-            d.setStartTime(null);
-            d.setEndTime(null);
-            d.setEnabled(false); // por defecto false (puedes cambiar esto)
+            d.setActivationDate(null);
+            d.setActivationTime(null);
+            d.setEnabled(false);
             d.setDescription(null);
+            d.setId(null);
             return d;
         }
         d.setId(e.getId());
         d.setRoleName(e.getRoleName());
-        d.setStartDate(e.getStartDate() != null ? e.getStartDate().toString() : null);
-        d.setEndDate(e.getEndDate() != null ? e.getEndDate().toString() : null);
-        d.setStartTime(e.getStartTime() != null ? e.getStartTime().toString() : null);
-        d.setEndTime(e.getEndTime() != null ? e.getEndTime().toString() : null);
+        d.setActivationDate(e.getActivationDate() != null ? e.getActivationDate().toString() : null);
+        d.setActivationTime(e.getActivationTime() != null ? e.getActivationTime().toString() : null);
         d.setEnabled(e.isEnabled());
         d.setDescription(e.getDescription());
         return d;
@@ -137,30 +120,20 @@ public class AccessRestrictionServiceImpl implements AccessRestrictionService {
     public static AccessRestriction fromDto(AccessRestrictionDTO d) {
         AccessRestriction e = new AccessRestriction();
         e.setId(d.getId());
-        e.setRoleName(d.getRoleName());
-        // sólo parsear si vienen valores no-nulos
-        if (d.getStartDate() != null && !d.getStartDate().isBlank()) {
-            e.setStartDate(LocalDate.parse(d.getStartDate()));
-        } else {
-            e.setStartDate(null);
-        }
-        if (d.getEndDate() != null && !d.getEndDate().isBlank()) {
-            e.setEndDate(LocalDate.parse(d.getEndDate()));
-        } else {
-            e.setEndDate(null);
-        }
-        if (d.getStartTime() != null && !d.getStartTime().isBlank()) {
-            e.setStartTime(LocalTime.parse(d.getStartTime()));
-        } else {
-            e.setStartTime(null);
-        }
-        if (d.getEndTime() != null && !d.getEndTime().isBlank()) {
-            e.setEndTime(LocalTime.parse(d.getEndTime()));
-        } else {
-            e.setEndTime(null);
-        }
+        e.setRoleName(d.getRoleName() != null ? d.getRoleName() : ROLE_APPLICANT);
         e.setEnabled(d.isEnabled());
         e.setDescription(d.getDescription());
+        if (d.getActivationDate() != null && !d.getActivationDate().isBlank()) {
+            e.setActivationDate(LocalDate.parse(d.getActivationDate()));
+        } else {
+            e.setActivationDate(null);
+        }
+        if (d.getActivationTime() != null && !d.getActivationTime().isBlank()) {
+            e.setActivationTime(LocalTime.parse(d.getActivationTime()));
+        } else {
+            e.setActivationTime(null);
+        }
         return e;
     }
+
 }

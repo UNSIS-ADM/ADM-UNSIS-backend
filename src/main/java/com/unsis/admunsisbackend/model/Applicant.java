@@ -133,4 +133,13 @@ public class Applicant {
     public void setUser(User user) {
         this.user = user;
     }
+
+    public String getCareerAtResult() {
+        return careerAtResult;
+    }
+
+    public void setCareerAtResult(String careerAtResult) {
+        this.careerAtResult = careerAtResult;
+    }
+
 }

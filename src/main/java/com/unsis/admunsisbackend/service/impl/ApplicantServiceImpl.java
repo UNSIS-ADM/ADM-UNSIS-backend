@@ -1,19 +1,30 @@
 package com.unsis.admunsisbackend.service.impl;
 
+import com.unsis.admunsisbackend.dto.ApplicantAdminUpdateDTO;
 import com.unsis.admunsisbackend.dto.ApplicantResponseDTO;
+import com.unsis.admunsisbackend.model.AdmissionResult;
 import com.unsis.admunsisbackend.model.Applicant;
+import com.unsis.admunsisbackend.model.ApplicantStatus;
+import com.unsis.admunsisbackend.model.User;
 import com.unsis.admunsisbackend.model.Vacancy;
+import com.unsis.admunsisbackend.repository.AdmissionResultRepository;
 import com.unsis.admunsisbackend.repository.ApplicantRepository;
 import com.unsis.admunsisbackend.repository.VacancyRepository;
 import com.unsis.admunsisbackend.service.ApplicantService;
+import com.unsis.admunsisbackend.repository.UserRepository; // añadirs
 
 import jakarta.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
+// dentro de la clase ApplicantServiceImpl, junto a applicantRepo y vacancyRepo
 
 @Service
 public class ApplicantServiceImpl implements ApplicantService {
@@ -23,6 +34,12 @@ public class ApplicantServiceImpl implements ApplicantService {
 
     @Autowired
     private VacancyRepository vacancyRepo;
+
+    @Autowired
+    private UserRepository userRepo;
+
+    @Autowired
+    private AdmissionResultRepository admissionResultRepo;
 
     @Override
     @Transactional // read-only impl via jakarta.transaction.Transactional (for lazy fetch safety)
@@ -60,22 +77,6 @@ public class ApplicantServiceImpl implements ApplicantService {
         return results.stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    private ApplicantResponseDTO toDto(Applicant a) {
-        ApplicantResponseDTO dto = new ApplicantResponseDTO();
-        dto.setId(a.getId());
-        dto.setFicha(a.getFicha());
-        dto.setCurp(a.getCurp());
-        dto.setFullName(a.getUser() != null ? a.getUser().getFullName() : null);
-        dto.setCareer(a.getCareer());
-        dto.setLocation(a.getLocation());
-        dto.setExamRoom(a.getExamRoom());
-        dto.setExamDate(a.getExamDate());
-        dto.setStatus(a.getStatus());
-        dto.setAdmissionYear(a.getAdmissionYear()); // ya lo tenías, lo dejamos
-        dto.setLastLogin(a.getUser() != null ? a.getUser().getLastLogin() : null);
-        return dto;
-    }
-
     @Override
     @Transactional
     public void changeCareerByCurp(String curp, String newCareer) {
@@ -103,5 +104,138 @@ public class ApplicantServiceImpl implements ApplicantService {
         // todo OK → actualizar
         a.setCareer(newCareer);
         applicantRepo.save(a);
+    }
+
+    @Override
+    public ApplicantResponseDTO getApplicantById(Long id) {
+        Applicant a = applicantRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aspirante no encontrado"));
+
+        ApplicantResponseDTO dto = toDto(a);
+        // obtener último admission result y sobrescribir campos en el DTO
+        admissionResultRepo.findTopByApplicantOrderByCreatedAtDesc(a).ifPresent(res -> {
+            dto.setCareerAtResult(res.getCareerAtResult());
+            dto.setScore(res.getScore()); // necesitarías añadir score en ApplicantResponseDTO si quieres mostrarlo
+            dto.setResultDate(res.getCreatedAt()); // añade campo resultDate en DTO si hace falta
+        });
+
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public ApplicantResponseDTO updateApplicantByAdmin(Long id, ApplicantAdminUpdateDTO dto, String adminUsername) {
+        Applicant a = applicantRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aspirante no encontrado"));
+
+        // FICHA (unicidad)
+        if (dto.getFicha() != null) {
+            Long nuevaFicha = dto.getFicha();
+            if (!nuevaFicha.equals(a.getFicha()) && applicantRepo.existsByFicha(nuevaFicha)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Ya existe un aspirante con ficha: " + nuevaFicha);
+            }
+            a.setFicha(nuevaFicha);
+        }
+
+        // CURP (unicidad)
+        if (dto.getCurp() != null) {
+            String nuevaCurp = dto.getCurp().trim().toUpperCase();
+            if (!nuevaCurp.equalsIgnoreCase(a.getCurp()) && applicantRepo.existsByCurp(nuevaCurp)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un aspirante con CURP: " + nuevaCurp);
+            }
+            a.setCurp(nuevaCurp);
+        }
+
+        // Otros campos Applicant
+        if (dto.getCareer() != null)
+            a.setCareer(dto.getCareer());
+        if (dto.getLocation() != null)
+            a.setLocation(dto.getLocation());
+        if (dto.getExamRoom() != null)
+            a.setExamRoom(dto.getExamRoom());
+        if (dto.getExamAssigned() != null)
+            a.setExamAssigned(dto.getExamAssigned());
+        if (dto.getExamDate() != null)
+            a.setExamDate(dto.getExamDate());
+        if (dto.getAdmissionYear() != null)
+            a.setAdmissionYear(dto.getAdmissionYear());
+
+        // STATUS: si usas enum en la entidad deberías setear ApplicantStatus
+        // directamente.
+        if (dto.getStatus() != null) {
+            ApplicantStatus st = dto.getStatus();
+            a.setStatus(st.name()); // si tu entidad usa String
+            // si la entidad usa enum: a.setStatus(st);
+        }
+
+        // Actualizar User relacionado (fullName, lastLogin)
+        User user = a.getUser();
+        if (user != null) {
+            if (dto.getFullName() != null)
+                user.setFullName(dto.getFullName());
+            if (dto.getLastLogin() != null)
+                user.setLastLogin(dto.getLastLogin());
+            userRepo.save(user); // explícito: claro y seguro
+        }
+
+        // ---- Manejo simple de admission_results ----
+// Si el admin envió cualquiera de los campos de admission_result, creamos o actualizamos.
+boolean hasAdmissionFields = dto.getCareerAtResult() != null
+        || dto.getScore() != null
+        || dto.getAdmissionYear() != null
+        || dto.getCreatedAt() != null;
+
+if (hasAdmissionFields) {
+    // Determinar año objetivo (si no viene, usamos el admissionYear del applicant)
+    Integer targetYear = dto.getAdmissionYear() != null ? dto.getAdmissionYear() : a.getAdmissionYear();
+
+    // Buscar el último resultado
+    AdmissionResult last = admissionResultRepo.findTopByApplicantOrderByCreatedAtDesc(a).orElse(null);
+
+    if (last != null && last.getAdmissionYear() != null && last.getAdmissionYear().equals(targetYear)) {
+        // Actualizar el último si el año coincide
+        if (dto.getCareerAtResult() != null) last.setCareerAtResult(dto.getCareerAtResult());
+        if (dto.getScore() != null) last.setScore(dto.getScore());
+        if (dto.getAdmissionYear() != null) last.setAdmissionYear(dto.getAdmissionYear());
+        if (dto.getCreatedAt() != null) last.setCreatedAt(dto.getCreatedAt());
+        admissionResultRepo.save(last);
+    } else {
+        // Crear nuevo admission_result
+        AdmissionResult newRes = new AdmissionResult();
+        newRes.setApplicant(a);
+        newRes.setCareerAtResult(dto.getCareerAtResult()); // puede ser null
+        newRes.setScore(dto.getScore()); // puede ser null
+        newRes.setAdmissionYear(targetYear);
+        // si el admin pasó createdAt, lo usamos; si no, @PrePersist pondrá now()
+        if (dto.getCreatedAt() != null) newRes.setCreatedAt(dto.getCreatedAt());
+        // status del result: si quieres puedes dejar null o usar el applicant.status
+        // newRes.setStatus(a.getStatus() != null ? a.getStatus() : "PENDING");
+        admissionResultRepo.save(newRes);
+    }
+}
+
+
+        Applicant saved = applicantRepo.save(a);
+        return toDto(saved);
+    }
+
+    // toDto existente (asegúrate que incluye fullName/lastLogin ya que proviene de
+    // user)
+    private ApplicantResponseDTO toDto(Applicant a) {
+        ApplicantResponseDTO dto = new ApplicantResponseDTO();
+        dto.setId(a.getId());
+        dto.setFicha(a.getFicha());
+        dto.setCurp(a.getCurp());
+        dto.setCareerAtResult(a.getCareerAtResult());
+        dto.setFullName(a.getUser() != null ? a.getUser().getFullName() : null);
+        dto.setCareer(a.getCareer());
+        dto.setLocation(a.getLocation());
+        dto.setExamRoom(a.getExamRoom());
+        dto.setExamDate(a.getExamDate());
+        dto.setStatus(a.getStatus());
+        dto.setAdmissionYear(a.getAdmissionYear());
+        dto.setLastLogin(a.getUser() != null ? a.getUser().getLastLogin() : null);
+        return dto;
     }
 }

@@ -4,19 +4,17 @@ import com.unsis.admunsisbackend.dto.ApplicantAdminUpdateDTO;
 import com.unsis.admunsisbackend.dto.ApplicantResponseDTO;
 import com.unsis.admunsisbackend.model.AdmissionResult;
 import com.unsis.admunsisbackend.model.Applicant;
-import com.unsis.admunsisbackend.model.ApplicantStatus;
 import com.unsis.admunsisbackend.model.User;
 import com.unsis.admunsisbackend.model.Vacancy;
 import com.unsis.admunsisbackend.repository.AdmissionResultRepository;
 import com.unsis.admunsisbackend.repository.ApplicantRepository;
 import com.unsis.admunsisbackend.repository.VacancyRepository;
 import com.unsis.admunsisbackend.service.ApplicantService;
-import com.unsis.admunsisbackend.repository.UserRepository; // añadirs
+import com.unsis.admunsisbackend.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -128,12 +126,36 @@ public class ApplicantServiceImpl implements ApplicantService {
         Applicant a = applicantRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aspirante no encontrado"));
 
-        // FICHA (unicidad)
+        // FICHA (unicidad por año
+        /*
+         * if (dto.getFicha() != null) {
+         * Long nuevaFicha = dto.getFicha();
+         * if (!nuevaFicha.equals(a.getFicha()) &&
+         * applicantRepo.existsByFicha(nuevaFicha)) {
+         * throw new ResponseStatusException(HttpStatus.CONFLICT,
+         * "Ya existe un aspirante con ficha: " + nuevaFicha);
+         * }
+         * a.setFicha(nuevaFicha);
+         * }
+         * 
+         * // CURP (unicidad)
+         * if (dto.getCurp() != null) {
+         * String nuevaCurp = dto.getCurp().trim().toUpperCase();
+         * if (!nuevaCurp.equalsIgnoreCase(a.getCurp()) &&
+         * applicantRepo.existsByCurp(nuevaCurp)) {
+         * throw new ResponseStatusException(HttpStatus.CONFLICT,
+         * "Ya existe un aspirante con CURP: " + nuevaCurp);
+         * }
+         * a.setCurp(nuevaCurp);
+         * }
+         */
+
         if (dto.getFicha() != null) {
             Long nuevaFicha = dto.getFicha();
-            if (!nuevaFicha.equals(a.getFicha()) && applicantRepo.existsByFicha(nuevaFicha)) {
+            if (!nuevaFicha.equals(a.getFicha()) &&
+                    applicantRepo.existsByFichaAndAdmissionYear(nuevaFicha, a.getAdmissionYear())) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT,
-                        "Ya existe un aspirante con ficha: " + nuevaFicha);
+                        "Ya existe un aspirante con ficha: " + nuevaFicha + " en el año " + a.getAdmissionYear());
             }
             a.setFicha(nuevaFicha);
         }
@@ -141,8 +163,10 @@ public class ApplicantServiceImpl implements ApplicantService {
         // CURP (unicidad)
         if (dto.getCurp() != null) {
             String nuevaCurp = dto.getCurp().trim().toUpperCase();
-            if (!nuevaCurp.equalsIgnoreCase(a.getCurp()) && applicantRepo.existsByCurp(nuevaCurp)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un aspirante con CURP: " + nuevaCurp);
+            if (!nuevaCurp.equalsIgnoreCase(a.getCurp()) &&
+                    applicantRepo.existsByCurpAndAdmissionYear(nuevaCurp, a.getAdmissionYear())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Ya existe un aspirante con CURP: " + nuevaCurp + " en el año " + a.getAdmissionYear());
             }
             a.setCurp(nuevaCurp);
         }
@@ -160,61 +184,48 @@ public class ApplicantServiceImpl implements ApplicantService {
             a.setExamDate(dto.getExamDate());
         if (dto.getAdmissionYear() != null)
             a.setAdmissionYear(dto.getAdmissionYear());
-
-        // STATUS: si usas enum en la entidad deberías setear ApplicantStatus
-        // directamente.
-        if (dto.getStatus() != null) {
-            ApplicantStatus st = dto.getStatus();
-            a.setStatus(st.name()); // si tu entidad usa String
-            // si la entidad usa enum: a.setStatus(st);
-        }
-
+            
         // Actualizar User relacionado (fullName, lastLogin)
         User user = a.getUser();
         if (user != null) {
             if (dto.getFullName() != null)
-                user.setFullName(dto.getFullName());
-            if (dto.getLastLogin() != null)
-                user.setLastLogin(dto.getLastLogin());
+                user.setFullName(dto.getFullName());;
             userRepo.save(user); // explícito: claro y seguro
         }
 
         // ---- Manejo simple de admission_results ----
-// Si el admin envió cualquiera de los campos de admission_result, creamos o actualizamos.
-boolean hasAdmissionFields = dto.getCareerAtResult() != null
-        || dto.getScore() != null
-        || dto.getAdmissionYear() != null
-        || dto.getCreatedAt() != null;
+        // Si el admin envió cualquiera de los campos de admission_result, creamos o
+        // actualizamos.
+        boolean hasAdmissionFields = dto.getCareerAtResult() != null
+                || dto.getScore() != null
+                || dto.getAdmissionYear() != null;
 
-if (hasAdmissionFields) {
-    // Determinar año objetivo (si no viene, usamos el admissionYear del applicant)
-    Integer targetYear = dto.getAdmissionYear() != null ? dto.getAdmissionYear() : a.getAdmissionYear();
+        if (hasAdmissionFields) {
+            // Determinar año objetivo (si no viene, usamos el admissionYear del applicant)
+            Integer targetYear = dto.getAdmissionYear() != null ? dto.getAdmissionYear() : a.getAdmissionYear();
 
-    // Buscar el último resultado
-    AdmissionResult last = admissionResultRepo.findTopByApplicantOrderByCreatedAtDesc(a).orElse(null);
+            // Buscar el último resultado
+            AdmissionResult last = admissionResultRepo.findTopByApplicantOrderByCreatedAtDesc(a).orElse(null);
 
-    if (last != null && last.getAdmissionYear() != null && last.getAdmissionYear().equals(targetYear)) {
-        // Actualizar el último si el año coincide
-        if (dto.getCareerAtResult() != null) last.setCareerAtResult(dto.getCareerAtResult());
-        if (dto.getScore() != null) last.setScore(dto.getScore());
-        if (dto.getAdmissionYear() != null) last.setAdmissionYear(dto.getAdmissionYear());
-        if (dto.getCreatedAt() != null) last.setCreatedAt(dto.getCreatedAt());
-        admissionResultRepo.save(last);
-    } else {
-        // Crear nuevo admission_result
-        AdmissionResult newRes = new AdmissionResult();
-        newRes.setApplicant(a);
-        newRes.setCareerAtResult(dto.getCareerAtResult()); // puede ser null
-        newRes.setScore(dto.getScore()); // puede ser null
-        newRes.setAdmissionYear(targetYear);
-        // si el admin pasó createdAt, lo usamos; si no, @PrePersist pondrá now()
-        if (dto.getCreatedAt() != null) newRes.setCreatedAt(dto.getCreatedAt());
-        // status del result: si quieres puedes dejar null o usar el applicant.status
-        // newRes.setStatus(a.getStatus() != null ? a.getStatus() : "PENDING");
-        admissionResultRepo.save(newRes);
-    }
-}
-
+            if (last != null && last.getAdmissionYear() != null && last.getAdmissionYear().equals(targetYear)) {
+                // Actualizar el último si el año coincide
+                if (dto.getCareerAtResult() != null)
+                    last.setCareerAtResult(dto.getCareerAtResult());
+                if (dto.getScore() != null)
+                last.setScore(dto.getScore());
+                if (dto.getAdmissionYear() != null)
+                    last.setAdmissionYear(dto.getAdmissionYear());
+                admissionResultRepo.save(last);
+            } else {
+                // Crear nuevo admission_result
+                AdmissionResult newRes = new AdmissionResult();
+                newRes.setApplicant(a);
+                newRes.setCareerAtResult(dto.getCareerAtResult()); // puede ser null
+                newRes.setScore(dto.getScore()); // puede ser null
+                newRes.setAdmissionYear(targetYear);
+                admissionResultRepo.save(newRes);
+            }
+        }
 
         Applicant saved = applicantRepo.save(a);
         return toDto(saved);

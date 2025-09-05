@@ -21,4 +21,7 @@ public interface ApplicantRepository extends JpaRepository<Applicant, Long> {
    long countByCareerAndAdmissionYear(String career, int admissionYear);
    long countByCareerAndAdmissionYearAndStatus(String career, int year, String status);
 
+   boolean existsByFichaAndAdmissionYear(Long ficha, Integer admissionYear);
+   boolean existsByCurpAndAdmissionYear(String curp, Integer admissionYear);
+
 }

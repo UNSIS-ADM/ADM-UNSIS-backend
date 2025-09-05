@@ -4,9 +4,11 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.time.Year;
 
-
 @Entity
-@Table(name = "applicants")
+@Table(name = "applicants", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "ficha", "admission_year" }),
+        @UniqueConstraint(columnNames = { "curp", "admission_year" })
+})
 public class Applicant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,11 +19,12 @@ public class Applicant {
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
-    @Column(nullable = false, unique = true)
-    private Long ficha; // <-- Nuevo
+    @Column(nullable = false)
+    private Long ficha; 
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String curp;
+
     private String career;
     private String location;
 
@@ -39,17 +42,17 @@ public class Applicant {
 
     private String status = "PENDING";
 
-    @Column(name="admission_year", nullable=false)
+    @Column(name = "admission_year", nullable = false)
     private Integer admissionYear;
-    
+
     public Applicant() {
-        this.admissionYear = Year.now().getValue();  
+        this.admissionYear = Year.now().getValue();
     }
 
     public Integer getAdmissionYear() {
         return this.admissionYear;
     }
-    
+
     public void setAdmissionYear(Integer admissionYear) {
         this.admissionYear = (admissionYear != null) ? admissionYear : Year.now().getValue();
     }
@@ -65,7 +68,7 @@ public class Applicant {
     public Long getFicha() {
         return ficha;
     }
-    
+
     public void setFicha(Long ficha) {
         this.ficha = ficha;
     }

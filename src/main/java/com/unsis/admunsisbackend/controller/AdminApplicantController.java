@@ -32,13 +32,6 @@ public class AdminApplicantController {
             @PathVariable Long id,
             @RequestBody @Valid ApplicantAdminUpdateDTO dto,
             Authentication auth) {
-
-        // Si el body trae id, validar que coincida con path
-        if (dto.getId() != null && !dto.getId().equals(id)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "El id en el body no coincide con el id de la URL");
-        }
-
         String adminUsername = auth != null ? auth.getName() : "unknown";
         ApplicantResponseDTO updated = applicantService.updateApplicantByAdmin(id, dto, adminUsername);
         return ResponseEntity.ok(updated);

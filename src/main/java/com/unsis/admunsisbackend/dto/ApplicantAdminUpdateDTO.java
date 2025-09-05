@@ -1,8 +1,10 @@
 // src/main/java/com/unsis/admunsisbackend/dto/ApplicantAdminUpdateDTO.java
 package com.unsis.admunsisbackend.dto;
 
-import com.unsis.admunsisbackend.model.ApplicantStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
+
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -11,14 +13,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class ApplicantAdminUpdateDTO {
-    // opcional: puedes incluir id pero lo validamos en controller si viene
-    private Long id;
-
+    
     @Min(1)
     private Long ficha;
 
-    // CURP: 18 caracteres alfa-numéricos (mayúsculas). Ajusta regex si necesitas
-    // reglas más estrictas.
     @Pattern(regexp = "^[A-Z0-9]{18}$", message = "CURP inválida (18 caracteres, mayúsculas y números)")
     private String curp;
 
@@ -38,33 +36,18 @@ public class ApplicantAdminUpdateDTO {
 
     // ISO-8601 expected e.g. "2026-06-01T09:00:00"
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime examDate;
-
-    // Usaremos enum ApplicantStatus (null = no cambiar)
-    private ApplicantStatus status;
+    private LocalDateTime examDate; //Fecha de examen para el aspirante
 
     @Min(2000)
     private Integer admissionYear;
 
-    // lastLogin en User (ISO-8601)
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime lastLogin;
-
     private String careerAtResult;
+
+    @DecimalMin(value = "0", inclusive = true, message = "El score no puede ser menor que 0")
+    @DecimalMax(value = "100", inclusive = true, message = "El score no puede ser mayor que 100")
     private BigDecimal score;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime createdAt;
-
     // getters y setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public Long getFicha() {
         return ficha;
     }
@@ -129,28 +112,12 @@ public class ApplicantAdminUpdateDTO {
         this.examDate = examDate;
     }
 
-    public ApplicantStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ApplicantStatus status) {
-        this.status = status;
-    }
-
     public Integer getAdmissionYear() {
         return admissionYear;
     }
 
     public void setAdmissionYear(Integer admissionYear) {
         this.admissionYear = admissionYear;
-    }
-
-    public LocalDateTime getLastLogin() {
-        return lastLogin;
-    }
-
-    public void setLastLogin(LocalDateTime lastLogin) {
-        this.lastLogin = lastLogin;
     }
 
     public String getCareerAtResult() {
@@ -169,11 +136,4 @@ public class ApplicantAdminUpdateDTO {
         this.score = score;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
 }

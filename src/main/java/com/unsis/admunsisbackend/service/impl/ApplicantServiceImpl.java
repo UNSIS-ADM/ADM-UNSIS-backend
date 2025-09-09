@@ -10,6 +10,7 @@ import com.unsis.admunsisbackend.repository.AdmissionResultRepository;
 import com.unsis.admunsisbackend.repository.ApplicantRepository;
 import com.unsis.admunsisbackend.repository.VacancyRepository;
 import com.unsis.admunsisbackend.service.ApplicantService;
+import com.unsis.admunsisbackend.service.UserService;
 import com.unsis.admunsisbackend.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
@@ -21,11 +22,15 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 // dentro de la clase ApplicantServiceImpl, junto a applicantRepo y vacancyRepo
 
 @Service
 public class ApplicantServiceImpl implements ApplicantService {
+    private static final Logger logger = LoggerFactory.getLogger(ApplicantServiceImpl.class);
 
     @Autowired
     private ApplicantRepository applicantRepo;
@@ -38,6 +43,9 @@ public class ApplicantServiceImpl implements ApplicantService {
 
     @Autowired
     private AdmissionResultRepository admissionResultRepo;
+
+    @Autowired
+    private UserService userService;
 
     @Override
     @Transactional // read-only impl via jakarta.transaction.Transactional (for lazy fetch safety)
@@ -188,46 +196,55 @@ public class ApplicantServiceImpl implements ApplicantService {
         // Actualizar User relacionado (fullName, lastLogin)
         User user = a.getUser();
         if (user != null) {
-            if (dto.getFullName() != null)
-                user.setFullName(dto.getFullName());;
-            userRepo.save(user); // explícito: claro y seguro
+            if (dto.getFullName() != null) {
+                user.setFullName(dto.getFullName());
+            }
+            userRepo.save(user); // guardamos nombre actualizado antes de sincronizar credenciales
         }
 
         // ---- Manejo simple de admission_results ----
-        // Si el admin envió cualquiera de los campos de admission_result, creamos o
-        // actualizamos.
         boolean hasAdmissionFields = dto.getCareerAtResult() != null
                 || dto.getScore() != null
                 || dto.getAdmissionYear() != null;
 
         if (hasAdmissionFields) {
+            if (hasAdmissionFields) {
             // Determinar año objetivo (si no viene, usamos el admissionYear del applicant)
             Integer targetYear = dto.getAdmissionYear() != null ? dto.getAdmissionYear() : a.getAdmissionYear();
-
             // Buscar el último resultado
             AdmissionResult last = admissionResultRepo.findTopByApplicantOrderByCreatedAtDesc(a).orElse(null);
 
             if (last != null && last.getAdmissionYear() != null && last.getAdmissionYear().equals(targetYear)) {
-                // Actualizar el último si el año coincide
                 if (dto.getCareerAtResult() != null)
                     last.setCareerAtResult(dto.getCareerAtResult());
                 if (dto.getScore() != null)
-                last.setScore(dto.getScore());
+                    last.setScore(dto.getScore());
                 if (dto.getAdmissionYear() != null)
                     last.setAdmissionYear(dto.getAdmissionYear());
                 admissionResultRepo.save(last);
             } else {
-                // Crear nuevo admission_result
                 AdmissionResult newRes = new AdmissionResult();
                 newRes.setApplicant(a);
-                newRes.setCareerAtResult(dto.getCareerAtResult()); // puede ser null
-                newRes.setScore(dto.getScore()); // puede ser null
+                newRes.setCareerAtResult(dto.getCareerAtResult());
+                newRes.setScore(dto.getScore());
                 newRes.setAdmissionYear(targetYear);
                 admissionResultRepo.save(newRes);
             }
         }
+        }
 
         Applicant saved = applicantRepo.save(a);
+        
+        // --- Aquí sincronizamos las credenciales del usuario ---
+        try {
+            userService.syncUserCredentialsForApplicant(saved);
+        } catch (RuntimeException ex) {
+            // Log y convertir en ResponseStatusException para retornarlo al cliente admin
+            logger.error("Error sincronizando credenciales para applicant id {}: {}", saved.getId(), ex.getMessage());
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se pudieron sincronizar credenciales: " + ex.getMessage());
+        }
+
         return toDto(saved);
     }
 

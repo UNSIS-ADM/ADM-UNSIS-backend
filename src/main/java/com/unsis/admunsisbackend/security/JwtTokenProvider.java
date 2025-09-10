@@ -73,4 +73,14 @@ public class JwtTokenProvider {
         }
         return false;
     }
+
+    // Refresh token de sesión
+    public Claims getAllClaimsFromToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody(); // esto lanzará ExpiredJwtException si expiró
+    }
+
 }

@@ -2,6 +2,8 @@ package com.unsis.admunsisbackend.security;
 
 import org.springframework.lang.NonNull;
 import java.io.IOException;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +20,11 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import io.jsonwebtoken.ExpiredJwtException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
-
     // Inyectamos el JwtTokenProvider para validar y extraer información del token JWT
     @Autowired
     private JwtTokenProvider tokenProvider;
@@ -30,6 +32,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // Inyectamos el UserDetailsService para cargar los detalles del usuario
     @Autowired
     private UserDetailsService userDetailsService; 
+
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider) {
+        this.tokenProvider = tokenProvider;
+    }
+
 
     // Método que se ejecuta para cada solicitud HTTP
     @Override
@@ -51,8 +61,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     logger.info("Roles del usuario: " + userDetails.getAuthorities());
 
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
+                            userDetails, null,
                             userDetails.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -63,11 +72,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             } else {
                 logger.info("No se encontró token JWT en la solicitud");
             }
+
+            filterChain.doFilter(request, response);
+
+        } catch (ExpiredJwtException ex) {
+            logger.error("Token expirado: {}", ex.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            new ObjectMapper().writeValue(response.getOutputStream(),
+                    Map.of("error", "TOKEN_EXPIRED", "message", "Tu sesión ha expirado"));
         } catch (Exception ex) {
             logger.error("Error al procesar el token JWT", ex);
+            filterChain.doFilter(request, response);
         }
-
-        filterChain.doFilter(request, response);
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {

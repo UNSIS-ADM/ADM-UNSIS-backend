@@ -83,4 +83,8 @@ public class JwtTokenProvider {
                 .getBody(); // esto lanzará ExpiredJwtException si expiró
     }
 
+    public int getJwtExpirationInMs() {
+        return jwtExpirationInMs;
+    }
+
 }

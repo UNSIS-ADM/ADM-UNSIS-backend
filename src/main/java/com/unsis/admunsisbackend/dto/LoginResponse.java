@@ -9,6 +9,8 @@ public class LoginResponse {
     private Set<String> roles;
     private String curp; // Puede ser null si no aplica
     private String token; // Aquí se va a guardar el JWT
+    private String refreshToken; // refresh token
+    private long accessTokenExpiry; // epoch ms (opcional)
 
     // Getters y setters
     public String getUsername() {
@@ -49,5 +51,21 @@ public class LoginResponse {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
+
+    public long getAccessTokenExpiry() {
+        return accessTokenExpiry;
+    }
+
+    public void setAccessTokenExpiry(long accessTokenExpiry) {
+        this.accessTokenExpiry = accessTokenExpiry;
     }
 }

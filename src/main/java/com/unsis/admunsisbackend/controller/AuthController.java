@@ -48,11 +48,27 @@ public class AuthController {
         // 1) Validar credenciales y generar LoginResponse (sin token todavía)
         LoginResponse response = authService.login(loginRequest);
 
-        // 2) Generar token JWT usando el username
-        String token = tokenProvider.generateToken(response.getUsername());
-        response.setToken(token);
+        // 2) Generar access token JWT usando el username
+        String accessToken = tokenProvider.generateToken(response.getUsername());
+        response.setToken(accessToken);
 
-        // 3) Devolver el LoginResponse ya con el campo `token`
+        // 3) Crear refresh token y devolverlo también
+        User user = userRepository.findByUsername(response.getUsername())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // define duración del refresh token (ejemplo: 7 días) o para pruebas 1 minuto
+        //long refreshDurationMs = 7L * 24 * 60 * 60 * 1000; // producción: 7 días
+        // para pruebas locales puedes usar: 
+        //long refreshDurationMs = 60L * 1000; // 1
+        long refreshDurationMs = 2L * 60 * 1000; // 2 minutos
+
+
+        RefreshToken rt = refreshTokenService.createRefreshToken(user.getId(), refreshDurationMs);
+
+        response.setRefreshToken(rt.getToken());
+        // usa el getter del tokenProvider para calcular expiry del access token
+        response.setAccessTokenExpiry(System.currentTimeMillis() + tokenProvider.getJwtExpirationInMs());
+
         return ResponseEntity.ok(response);
     }
 
@@ -117,14 +133,23 @@ public class AuthController {
         }
 
         RefreshToken rt = opt.get();
-        // 🔹 Buscar el usuario dueño del refreshToken
+        // Buscar el usuario dueño del refreshToken
         User user = userRepository.findById(rt.getUserId())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado para el refresh token"));
 
-        // 🔹 Generar nuevo accessToken usando el username correcto
+        // Generar nuevo accessToken usando el username correcto
         String newAccessToken = jwtTokenProvider.generateToken(user.getUsername());
 
-        return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+        // Opción: rotar el refresh token (recomendado)
+    //    long refreshDurationMs = 7L * 24 * 60 * 60 * 1000; // mismo tiempo que usaste en login
+        //long refreshDurationMs = 60L * 1000; // 1 min
+        long refreshDurationMs = 2L * 60 * 1000; // 2 minutos
+
+        RefreshToken newRt = refreshTokenService.createRefreshToken(user.getId(), refreshDurationMs);
+
+        return ResponseEntity.ok(Map.of(
+                "accessToken", newAccessToken,
+                "refreshToken", newRt.getToken()));
     }
 
     // Endpoint para logout

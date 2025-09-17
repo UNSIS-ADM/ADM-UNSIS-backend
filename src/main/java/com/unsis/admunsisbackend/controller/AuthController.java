@@ -60,8 +60,8 @@ public class AuthController {
         //long refreshDurationMs = 7L * 24 * 60 * 60 * 1000; // producción: 7 días
         // para pruebas locales puedes usar: 
         //long refreshDurationMs = 60L * 1000; // 1
-        long refreshDurationMs = 2L * 60 * 1000; // 2 minutos
-
+        //long refreshDurationMs = 2L * 60 * 1000; // 2 minutos
+        long refreshDurationMs = 60L * 60 * 1000; // 1 hour
 
         RefreshToken rt = refreshTokenService.createRefreshToken(user.getId(), refreshDurationMs);
 
@@ -140,10 +140,11 @@ public class AuthController {
         // Generar nuevo accessToken usando el username correcto
         String newAccessToken = jwtTokenProvider.generateToken(user.getUsername());
 
-        // Opción: rotar el refresh token (recomendado)
-    //    long refreshDurationMs = 7L * 24 * 60 * 60 * 1000; // mismo tiempo que usaste en login
+        // Opción: rotar el refresh token (recomendado) mismo tiempo que usaste en Login
+        //long refreshDurationMs = 7L * 24 * 60 * 60 * 1000;
         //long refreshDurationMs = 60L * 1000; // 1 min
-        long refreshDurationMs = 2L * 60 * 1000; // 2 minutos
+        //long refreshDurationMs = 2L * 60 * 1000; // 2 minutos
+        long refreshDurationMs = 60L * 60 * 1000; // 1 hour
 
         RefreshToken newRt = refreshTokenService.createRefreshToken(user.getId(), refreshDurationMs);
 

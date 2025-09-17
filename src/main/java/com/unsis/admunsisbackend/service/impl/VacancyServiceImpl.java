@@ -53,33 +53,30 @@ public class VacancyServiceImpl implements VacancyService {
             if (limitCount != null) {
                 // Contadores actuales
                 long accepted = applicantRepo.countByCareerAndAdmissionYearAndStatus(career, y, "ACEPTADO");
+                long rejected = applicantRepo.countByCareerAndAdmissionYearAndStatus(career, y, "RECHAZADO");
                 long pending = requestRepo.countPendingByNewCareerAndYear(career, y);
 
-                // Validar que el nuevo límite no sea menor que aceptados+pendientes
-                if ((long) limitCount < accepted + pending) {
+                // total decisions = accepted + rejected
+                long totalDecisions = accepted + rejected;
+
+                // Validar que el nuevo límite no sea menor que totalDecisions + pending
+                if ((long) limitCount < totalDecisions + pending) {
                     throw new IllegalArgumentException(String.format(
-                            "El nuevo limitCount (%d) no puede ser menor que la suma de aceptados y pendientes (%d).",
-                            limitCount, accepted + pending));
+                            "El nuevo limitCount (%d) no puede ser menor que la suma de decisiones (aceptados+rechazados=%d) más pendientes (%d).",
+                            limitCount, totalDecisions, pending));
                 }
-                // Calculamos diferencia entre nuevo límite y límite actual (oldLimit)
-                int oldLimit = v.getLimitCount() != null ? v.getLimitCount() : 0;
-                int delta = limitCount - oldLimit;
 
                 // Actualizamos el limitCount
                 v.setLimitCount(limitCount);
+                v.setAcceptedCount(safeLongToInt(accepted));
+                v.setRejectedCount(safeLongToInt(rejected));
+                v.setPendingCount(safeLongToInt(pending));
+                v.setTotalCount(safeLongToInt(totalDecisions));
 
-                // Según tu requerimiento: available_slots será la diferencia positiva entre
-                // nuevo y viejo límite
-                // (si delta < 0 dejamos 0)
-                int newAvailable = Math.max(0, delta);
-                v.setAvailableSlots(newAvailable);
-
-                // Recalcular contadores con el nuevo límite
-                //actualizarContadores(v, y);
-
-                // NO llamamos a actualizarContadores ni tocamos acceptedCount/pendingCount aquí
+                // Recalcular availableSlots en base a totalDecisions + pending
+                int available = (int) Math.max(0, (long) limitCount - totalDecisions - pending);
+                v.setAvailableSlots(available);
                 v = vacancyRepo.save(v);
-
             }
 
         } else {
@@ -95,7 +92,9 @@ public class VacancyServiceImpl implements VacancyService {
 
             v.setLimitCount(initialLimit);
             v.setAcceptedCount(0);
+            v.setRejectedCount(0); // <-- agregado
             v.setPendingCount(0);
+            v.setTotalCount(0); // <-- agregado
             v.setAvailableSlots(initialLimit);
 
             v = vacancyRepo.save(v);
@@ -109,7 +108,7 @@ public class VacancyServiceImpl implements VacancyService {
         if (career == null || career.trim().isEmpty()) {
             throw new IllegalArgumentException("El parámetro 'career' es obligatorio.");
         }
-        // Rango razonable para año: desde 2000 hasta (año actual + 5)
+        // Rango razonable para año: desde 2000 hasta (año actual + 50)
         int current = Year.now().getValue();
         if (year < 2000 || year > current + 50) {
             throw new IllegalArgumentException(String.format(
@@ -145,25 +144,24 @@ public class VacancyServiceImpl implements VacancyService {
         String career = v.getCareer();
 
         long accepted = applicantRepo.countByCareerAndAdmissionYearAndStatus(career, year, "ACEPTADO");
+        long rejected = applicantRepo.countByCareerAndAdmissionYearAndStatus(career, year, "RECHAZADO");
         long pending = requestRepo.countPendingByNewCareerAndYear(career, year);
 
-        v.setAcceptedCount((int) accepted);
-        v.setPendingCount((int) pending);
+        long totalDecisions = accepted + rejected;
 
-        // Recalcular availableSlots siempre en base al limitCount y los contadores
-        // actuales
+        v.setAcceptedCount(safeLongToInt(accepted));
+        v.setRejectedCount(safeLongToInt(rejected));
+        v.setPendingCount(safeLongToInt(pending));
+        v.setTotalCount(safeLongToInt(totalDecisions));
+
         int limit = v.getLimitCount() != null ? v.getLimitCount() : 0;
-        long availableCalc = (long) limit - accepted - pending;
+        long availableCalc = (long) limit - totalDecisions - pending;
         int available = availableCalc <= 0 ? 0 : safeLongToInt(availableCalc);
 
         v.setAvailableSlots(available);
         vacancyRepo.save(v);
     }
 
-    /**
-     * Convierte un long a int de forma segura: si el long está fuera del rango int,
-     * lo fuerza a Integer.MAX_VALUE o Integer.MIN_VALUE según corresponda.
-     */
     private int safeLongToInt(long value) {
         if (value > Integer.MAX_VALUE)
             return Integer.MAX_VALUE;

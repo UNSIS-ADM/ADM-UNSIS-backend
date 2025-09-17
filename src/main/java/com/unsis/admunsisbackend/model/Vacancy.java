@@ -23,8 +23,14 @@ public class Vacancy {
     @Column(name = "accepted_count", nullable = false)
     private Integer acceptedCount;
 
+    @Column(name = "rejected_count")
+    private Integer rejectedCount = 0;
+
     @Column(name = "pending_count", nullable = false)
     private Integer pendingCount;
+
+    @Column(name = "total_count")
+    private Integer totalCount = 0; 
 
     @Column(name = "available_slots", nullable = false)
     private Integer availableSlots;
@@ -90,6 +96,22 @@ public class Vacancy {
 
     public Integer getLimitCount() {
         return limitCount;
+    }
+    
+    public Integer getRejectedCount() {
+        return rejectedCount == null ? 0 : rejectedCount;
+    }
+
+    public void setRejectedCount(Integer rejectedCount) {
+        this.rejectedCount = rejectedCount;
+    }
+
+    public Integer getTotalCount() {
+        return totalCount == null ? 0 : totalCount;
+    }
+
+    public void setTotalCount(Integer totalCount) {
+        this.totalCount = totalCount;
     }
 
     public void setLimitCount(Integer limitCount) {

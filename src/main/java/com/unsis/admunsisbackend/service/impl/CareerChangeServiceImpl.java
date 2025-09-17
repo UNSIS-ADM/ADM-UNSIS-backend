@@ -59,8 +59,19 @@ public class CareerChangeServiceImpl implements CareerChangeService {
             throw new RuntimeException("Cupo agotado para " + nuevaCarrera);
         }
 
-        vac.setAvailableSlots(vac.getAvailableSlots() - 1); // Reservar un slot
-        vacancyRepo.save(vac); // Guardar la vacante actualizada
+        // Reservar: incrementar pendingCount y recalcular availableSlots
+        int pendingNow = vac.getPendingCount() != null ? vac.getPendingCount() : 0;
+        vac.setPendingCount(pendingNow + 1);
+
+        int acceptedNow = vac.getAcceptedCount() != null ? vac.getAcceptedCount() : 0;
+        int rejectedNow = vac.getRejectedCount() != null ? vac.getRejectedCount() : 0;
+        int totalDecisions = acceptedNow + rejectedNow;
+        int limit = vac.getLimitCount() != null ? vac.getLimitCount() : 0;
+
+        int newAvailable = Math.max(0, limit - totalDecisions - (pendingNow + 1));
+        vac.setAvailableSlots(newAvailable);
+
+        vacancyRepo.save(vac);
 
         // 5) Crear solicitud
         CareerChangeRequest solicitud = new CareerChangeRequest();
@@ -118,21 +129,36 @@ public class CareerChangeServiceImpl implements CareerChangeService {
         // Acción en español: dto.getAction() = "ACEPTADO" o "RECHAZADO"
         String accion = dto.getAction() != null ? dto.getAction().trim().toUpperCase() : "";
 
-        if ("ACEPTADO".equalsIgnoreCase(dto.getAction())) {
-            // ACEPTAR: consume la reserva ya hecha en submit (no tocar availableSlots)
+        if ("ACEPTADO".equalsIgnoreCase(accion)) {
+            // ACEPTAR: consume la reserva ya hecha en submit
             solicitud.setStatus("ACEPTADO");
 
             app.setCareer(nuevaCarrera); // cambia a la nueva carrera
-            app.setStatus("ACEPTADO"); // siemore queda aceptado
+            app.setStatus("ACEPTADO");
             applicantRepo.save(app);
 
-        } else if ("RECHAZADO".equals(accion))
+            // actualizar vacante: pending--, accepted++, total++
+            int acceptedCount = vacNueva.getAcceptedCount() != null ? vacNueva.getAcceptedCount() : 0;
+            int pendingCount = vacNueva.getPendingCount() != null ? vacNueva.getPendingCount() : 0;
+            int rejectedCount = vacNueva.getRejectedCount() != null ? vacNueva.getRejectedCount() : 0;
+
+            vacNueva.setPendingCount(Math.max(0, pendingCount - 1));
+            vacNueva.setAcceptedCount(acceptedCount + 1);
+            vacNueva.setTotalCount((acceptedCount + 1) + rejectedCount);
+
+            // recalcular availableSlots = limit - total - pending
+            int limit = vacNueva.getLimitCount() != null ? vacNueva.getLimitCount() : 0;
+            int availableAfter = Math.max(0, limit - vacNueva.getTotalCount() - vacNueva.getPendingCount());
+            vacNueva.setAvailableSlots(availableAfter);
+
+            vacancyRepo.save(vacNueva);
+        } else if ("RECHAZADO".equalsIgnoreCase(accion))
 
         {
             // RECHAZAR: retorna la reserva a la NUEVA carrera
             solicitud.setStatus("RECHAZADO");
 
-            // Restaurar el status previo (CASO 1 y 4)
+            /*/ Restaurar el status previo (CASO 1 y 4)
             String previo = solicitud.getOldStatus();
             if ("ACEPTADO".equalsIgnoreCase(previo)) {
                 app.setStatus("ACEPTADO"); // CASO 1
@@ -148,6 +174,32 @@ public class CareerChangeServiceImpl implements CareerChangeService {
             vacancyRepo.save(vacNueva);
 
             applicantRepo.save(app);
+            */
+
+            // No restauramos applicant.status al previo, sino que lo marcamos RECHAZADO
+            // (según tu requerimiento de no restaurar)
+            app.setStatus("RECHAZADO");
+            applicantRepo.save(app);
+
+            // No incrementamos vacNueva.availableSlots (la reserva NO se devuelve)
+            // vacancyRepo.save(vacNueva); // <-- intencionalmente NO lo hacemos
+
+            // actualizar vacante: pending--, rejected++, total++
+            int acceptedCount = vacNueva.getAcceptedCount() != null ? vacNueva.getAcceptedCount() : 0;
+            int pendingCount = vacNueva.getPendingCount() != null ? vacNueva.getPendingCount() : 0;
+            int rejectedCount = vacNueva.getRejectedCount() != null ? vacNueva.getRejectedCount() : 0;
+
+            vacNueva.setPendingCount(Math.max(0, pendingCount - 1));
+            vacNueva.setRejectedCount(rejectedCount + 1);
+            vacNueva.setTotalCount(acceptedCount + (rejectedCount + 1));
+
+            // NO incrementamos availableSlots; recalculamos availableSlots = limit - total
+            // - pending (esto reflejará que no devuelve cupo)
+            int limit = vacNueva.getLimitCount() != null ? vacNueva.getLimitCount() : 0;
+            int availableAfter = Math.max(0, limit - vacNueva.getTotalCount() - vacNueva.getPendingCount());
+            vacNueva.setAvailableSlots(availableAfter);
+
+            vacancyRepo.save(vacNueva);
 
         } else {
             throw new RuntimeException("Acción inválida. Usa 'ACEPTADO' o 'RECHAZADO'.");
@@ -188,25 +240,3 @@ public class CareerChangeServiceImpl implements CareerChangeService {
     }
 }
 
-
-/*
- * 102 SBHB010228HOCNRLA3 ANA TORRES JARQUIN LICENCIATURA EN MEDICINA ACEPTADO
- * -> ACEPTADO
- * 
- * 103 SBHB010228HOCNRLA4 PEDRO AQUINO CANSECO LICENCIATURA EN ODONTOLOGÍA
- * ACEPTADO -> RECHAZADO
- * 
- * 115 JAHB010228HOCNRLB7 ALCÁNTARA PÉREZ CARLOS LICENCIATURA EN APÚBLICA
- * RECHAZADO -> ACEPTADO
- * 
- * 118 THHB010228HOCNRLC1 CASIMIRA REYES LOPEZ LICENCIATURA EN MEDICINA
- * RECHAZADO -> RECHAZADO
- * 
- * Id Ficha Carrera adscrita Carrera Solicitada Comentario del aspirante Estado
- * Acciones
- * 1 102 LICENCIATURA EN MEDICINA       LICENCIATURA EN CIENCIAS BIOMÉDICAS Ejemplo de aceptado a aceptado Pendiente Atender
- * 2 103 LICENCIATURA EN ODONTOLOGÍA    LICENCIATURA EN ENFERMERÍA Ejemplo de aceptado a rechazado Pendiente Atender
- * 3 115 LICENCIATURA EN ADM PÚBLICA    LICENCIATURA EN NUTRICION ejemplo de rechazado a aceptado Pendiente Atender
- * 4 118 LICENCIATURA EN MEDICINA       LICENCIATURA EN INFORMATICA ejemplo de rechazado a rechazado Pendiente Atender
- * 5 100 LICENCIATURA EN ENFERMERÍA     LICENCIATURA EN ENFERMERÍA Cambio a la misma carrera Pendiente Atender
- */

@@ -229,7 +229,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
 
             for (Map.Entry<String, Integer> e : totalByCareer.entrySet()) {
                 String career = e.getKey();
-                int tot = e.getValue();
+                int tot = e.getValue(); // inscritos detectados en el archivo
                 int acc = acceptedByCareer.getOrDefault(career, 0); // aceptados detectados en el archivo
                 int rej = rejectedByCareer.getOrDefault(career, 0); // rechazados -> los guardamos en pending_count
 
@@ -238,30 +238,53 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                             Vacancy nv = new Vacancy();
                             nv.setCareer(career);
                             nv.setAdmissionYear(year);
+                            // inicializa nuevos campos para que no sean null
                             nv.setLimitCount(0);
                             nv.setAcceptedCount(0);
+                            nv.setRejectedCount(0);
                             nv.setPendingCount(0);
+                            nv.setInscritosCount(0); // nuevo campo
+                            nv.setCuposInserted(0); // nuevo campo (se actualiza desde el front)
                             nv.setAvailableSlots(0);
                             return nv;
                         });
+
                 boolean changed = false;
 
-                if (!Objects.equals(v.getLimitCount(), tot)) {
-                    v.setLimitCount(tot);
+                // 1) inscritos (lo que viene del Excel)
+                if (!Objects.equals(v.getInscritosCount(), tot)) {
+                    v.setInscritosCount(tot);
                     changed = true;
                 }
 
+                // 2) accepted / pending (y rejected si lo usas)
                 if (!Objects.equals(v.getAcceptedCount(), acc)) {
                     v.setAcceptedCount(acc);
                     changed = true;
                 }
 
-                // Guardamos los rechazados en pending_count (según tu petición)
+                // Si tu diseño requiere store de "rejected", escribe en su campo; en tu ejemplo
+                // guardabas en pending
                 if (!Objects.equals(v.getPendingCount(), rej)) {
                     v.setPendingCount(rej);
                     changed = true;
                 }
 
+                // (Opcional) si tienes campo rejectedCount separado:
+                // if (!Objects.equals(v.getRejectedCount(), rej)) { v.setRejectedCount(rej);
+                // changed = true; }
+
+                // 3) Recalcular availableSlots = cuposInserted - inscritosCount
+                int cupos = Optional.ofNullable(v.getCuposInserted()).orElse(0);
+                int inscritos = Optional.ofNullable(v.getInscritosCount()).orElse(0);
+                int available = Math.max(0, cupos - inscritos);
+
+                if (!Objects.equals(v.getAvailableSlots(), available)) {
+                    v.setAvailableSlots(available);
+                    changed = true;
+                }
+
+                // Guardar solo si hubo cambios
                 if (changed) {
                     vacancyRepo.save(v);
                 }

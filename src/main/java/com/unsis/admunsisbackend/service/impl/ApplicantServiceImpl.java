@@ -248,22 +248,32 @@ public class ApplicantServiceImpl implements ApplicantService {
         return toDto(saved);
     }
 
-    // toDto existente (asegúrate que incluye fullName/lastLogin ya que proviene de
-    // user)
     private ApplicantResponseDTO toDto(Applicant a) {
-        ApplicantResponseDTO dto = new ApplicantResponseDTO();
-        dto.setId(a.getId());
-        dto.setFicha(a.getFicha());
-        dto.setCurp(a.getCurp());
-        dto.setCareerAtResult(a.getCareerAtResult());
-        dto.setFullName(a.getUser() != null ? a.getUser().getFullName() : null);
-        dto.setCareer(a.getCareer());
-        dto.setLocation(a.getLocation());
-        dto.setExamRoom(a.getExamRoom());
-        dto.setExamDate(a.getExamDate());
-        dto.setStatus(a.getStatus());
-        dto.setAdmissionYear(a.getAdmissionYear());
-        dto.setLastLogin(a.getUser() != null ? a.getUser().getLastLogin() : null);
-        return dto;
-    }
+    ApplicantResponseDTO dto = new ApplicantResponseDTO();
+    dto.setId(a.getId());
+    dto.setFicha(a.getFicha());
+    dto.setCurp(a.getCurp());
+    // No confiar en un campo inexistente en applicants
+    // dto.setCareerAtResult(a.getCareerAtResult());
+
+    dto.setFullName(a.getUser() != null ? a.getUser().getFullName() : null);
+    dto.setCareer(a.getCareer());
+    dto.setLocation(a.getLocation());
+    dto.setExamRoom(a.getExamRoom());
+    dto.setExamDate(a.getExamDate());
+    dto.setStatus(a.getStatus());
+    dto.setAdmissionYear(a.getAdmissionYear());
+    dto.setLastLogin(a.getUser() != null ? a.getUser().getLastLogin() : null);
+
+    // Buscar el último admission_result y rellenar careerAtResult, score, resultDate
+    admissionResultRepo.findTopByApplicantOrderByCreatedAtDesc(a).ifPresent(res -> {
+        dto.setCareerAtResult(res.getCareerAtResult());
+        dto.setScore(res.getScore());
+        dto.setResultDate(res.getCreatedAt());
+        dto.setComment(res.getComment());
+        // Opcional: dto.setStatus(res.getStatus()); si quieres mostrar el status del resultado
+    });
+
+    return dto;
+}
 }

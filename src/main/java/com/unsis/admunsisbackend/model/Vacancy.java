@@ -20,6 +20,12 @@ public class Vacancy {
     @Column(name = "limit_count", nullable = false)
     private Integer limitCount;
 
+    @Column(name = "inscritos_count", nullable = false)
+    private Integer inscritosCount = 0;
+
+    @Column(name = "cupos_inserted", nullable = false)
+    private Integer cuposInserted = 0;
+
     @Column(name = "accepted_count", nullable = false)
     private Integer acceptedCount;
 
@@ -96,6 +102,22 @@ public class Vacancy {
 
     public Integer getLimitCount() {
         return limitCount;
+    }
+
+    public Integer getInscritosCount() {
+        return inscritosCount;
+    }
+
+    public void setInscritosCount(Integer inscritosCount) {
+        this.inscritosCount = inscritosCount;
+    }
+
+    public Integer getCuposInserted() {
+        return cuposInserted;
+    }
+
+    public void setCuposInserted(Integer cuposInserted) {
+        this.cuposInserted = cuposInserted;
     }
     
     public Integer getRejectedCount() {

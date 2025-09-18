@@ -6,6 +6,8 @@ public class VacancyDTO {
     private String career;
     private Integer admissionYear;
     private Integer limitCount;
+    private Integer inscritosCount;
+    private Integer cuposInserted;
     private Integer acceptedCount;
     private Integer pendingCount;
     private Integer availableSlots;
@@ -33,6 +35,22 @@ public class VacancyDTO {
 
     public void setLimitCount(Integer limitCount) {
         this.limitCount = limitCount;
+    }
+
+    public Integer getInscritosCount() {
+        return inscritosCount;
+    }
+
+    public void setInscritosCount(Integer inscritosCount) {
+        this.inscritosCount = inscritosCount;
+    }
+
+    public Integer getCuposInserted() {
+        return cuposInserted;
+    }
+
+    public void setCuposInserted(Integer cuposInserted) {
+        this.cuposInserted = cuposInserted;
     }
 
     public Integer getAcceptedCount() {

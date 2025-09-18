@@ -14,10 +14,11 @@ public class ApplicantResponseDTO {
     private String location;
     private String examRoom;
     private LocalDateTime examDate;
-    private String status;
+    private String status;  
+    private String comment;    
+    private BigDecimal score;
     private Integer admissionYear;
     private LocalDateTime lastLogin;
-    private BigDecimal score;
     private LocalDateTime resultDate;
 
     public LocalDateTime getResultDate() {
@@ -107,6 +108,14 @@ public class ApplicantResponseDTO {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+    
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
     }
     
     public Integer getAdmissionYear() {

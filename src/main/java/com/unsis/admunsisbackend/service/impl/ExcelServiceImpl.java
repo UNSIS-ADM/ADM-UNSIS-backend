@@ -220,7 +220,7 @@ public class ExcelServiceImpl implements ExcelService {
         applicant.setExamRoom(getCellValue(row.getCell(5)));
         applicant.setExamDate(examDate);
         applicant.setExamAssigned(false);
-        applicant.setStatus("PENDING");
+        applicant.setStatus("PENDIENTE");
 //      applicant.setAdmissionYear(currentYear);
         applicant.setAdmissionYear(Year.now().getValue());
         applicantRepository.save(applicant);

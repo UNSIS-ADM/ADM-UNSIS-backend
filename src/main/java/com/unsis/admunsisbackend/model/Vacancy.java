@@ -23,6 +23,9 @@ public class Vacancy {
     @Column(name = "cupos_inserted", nullable = false)
     private Integer cuposInserted = 0;
 
+    @Column(name = "reserved_count", nullable = false)
+    private Integer reservedCount = 0;
+
     @Column(name = "available_slots", nullable = false)
     private Integer availableSlots;
 
@@ -117,6 +120,14 @@ public class Vacancy {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Integer getReservedCount() {
+        return reservedCount;
+    }
+
+    public void setReservedCount(Integer reservedCount) {
+        this.reservedCount = reservedCount;
     }
 
 }

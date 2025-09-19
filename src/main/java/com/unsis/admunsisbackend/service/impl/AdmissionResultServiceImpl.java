@@ -240,6 +240,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                             nv.setAdmissionYear(year);
                             nv.setInscritosCount(0); // nuevo campo
                             nv.setCuposInserted(0); // nuevo campo (se actualiza desde el front)
+                            nv.setReservedCount(0);
                             nv.setAvailableSlots(0);
                             return nv;
                         });

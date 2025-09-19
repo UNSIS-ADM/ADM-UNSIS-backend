@@ -35,8 +35,6 @@ public class Vacancy {
     @Column(name = "limit_count")
     private Integer limitCount = 0;
 
-    
-
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

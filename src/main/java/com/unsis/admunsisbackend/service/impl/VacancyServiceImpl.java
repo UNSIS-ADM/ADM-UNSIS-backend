@@ -30,10 +30,7 @@ public class VacancyServiceImpl implements VacancyService {
     @Override
     public List<VacancyDTO> listVacancies(Integer year) {
         int y = (year != null ? year : Year.now().getValue());
-        return vacancyRepo.findByAdmissionYear(y)
-                .stream()
-                .map(VacancyDTO::fromEntity)
-                .collect(Collectors.toList());
+        return vacancyRepo.findByAdmissionYear(y).stream().map(VacancyDTO::fromEntity).collect(Collectors.toList());
     }
 
     @Override
@@ -44,64 +41,43 @@ public class VacancyServiceImpl implements VacancyService {
 
         var opt = vacancyRepo.findByCareerAndAdmissionYear(career, y);
         Vacancy v;
+        int newCuposInserted = (limitCount != null ? limitCount : 0);
 
         if (opt.isPresent()) {
             v = opt.get();
 
-            if (limitCount != null) {
-                // Aquí interpretamos "limitCount" entrante como CUPOS INSERTED
-                int newCuposInserted = limitCount;
+            // primero recalculemos inscritos actuales desde applicants
+            int inscritos = (int) applicantRepo.countByCareerAndAdmissionYear(career, y);
+            v.setInscritosCount(inscritos);
 
-                // Contadores actuales desde applicants/requests
-                long accepted = applicantRepo.countByCareerAndAdmissionYearAndStatus(career, y, "ACEPTADO");
-                long rejected = applicantRepo.countByCareerAndAdmissionYearAndStatus(career, y, "RECHAZADO");
-                long pending = requestRepo.countPendingByNewCareerAndYear(career, y);
-
-                long totalDecisions = accepted + rejected;
-
-                // Validación: no permitir cupos menores que lo ya decidido+pendiente
-                if ((long) newCuposInserted < totalDecisions + pending) {
-                    throw new IllegalArgumentException(String.format(
-                            "Los cupos (%d) no pueden ser menores que aceptados+rechazados (%d) + pendientes (%d).",
-                            newCuposInserted, totalDecisions, pending));
-                }
-
-                // Guardamos cupos inserted
-                v.setCuposInserted(newCuposInserted);
-
-                // Actualizamos contadores (aceptados/rechazados/pending) para consistencia
-                v.setAcceptedCount(safeLongToInt(accepted));
-                v.setRejectedCount(safeLongToInt(rejected));
-                v.setPendingCount(safeLongToInt(pending));
-                v.setTotalCount(safeLongToInt(totalDecisions));
-
-                // Recalcular availableSlots usando cuposInserted - inscritosCount
-                int inscritos = Optional.ofNullable(v.getInscritosCount()).orElse(0);
-                int available = Math.max(0, newCuposInserted - inscritos);
-                v.setAvailableSlots(available);
-
-                v = vacancyRepo.save(v);
+            // Validación: no permitir cupos menores que los inscritos actuales
+            if (newCuposInserted < inscritos) {
+                throw new IllegalArgumentException(String.format(
+                        "Los cupos (%d) no pueden ser menores que el número de inscritos ya cargados (%d).",
+                        newCuposInserted, inscritos));
             }
+
+            v.setCuposInserted(newCuposInserted);
+            int available = Math.max(0, newCuposInserted - inscritos);
+            v.setAvailableSlots(available);
+
+            v = vacancyRepo.save(v);
         } else {
             v = new Vacancy();
             v.setCareer(career);
             v.setAdmissionYear(y);
 
-            int initialCupos = limitCount != null ? limitCount : 0;
-            if (initialCupos < 0) {
-                throw new IllegalArgumentException("limitCount no puede ser negativo.");
+            int inscritos = (int) applicantRepo.countByCareerAndAdmissionYear(career, y);
+            v.setInscritosCount(inscritos);
+
+            if (newCuposInserted < inscritos) {
+                throw new IllegalArgumentException(String.format(
+                        "Los cupos (%d) no pueden ser menores que el número de inscritos ya cargados (%d).",
+                        newCuposInserted, inscritos));
             }
 
-            v.setCuposInserted(initialCupos);
-            v.setAcceptedCount(0);
-            v.setRejectedCount(0);
-            v.setPendingCount(0);
-            v.setTotalCount(0);
-            // inscritosCount queda en 0 hasta que subas un excel
-            v.setInscritosCount(0);
-
-            int available = Math.max(0, initialCupos - v.getInscritosCount());
-            v.setAvailableSlots(available);
+            v.setCuposInserted(newCuposInserted);
+            v.setAvailableSlots(Math.max(0, newCuposInserted - inscritos));
 
             v = vacancyRepo.save(v);
         }
@@ -149,24 +125,14 @@ public class VacancyServiceImpl implements VacancyService {
     private void actualizarContadores(Vacancy v, int year) {
         String career = v.getCareer();
 
-        long accepted = applicantRepo.countByCareerAndAdmissionYearAndStatus(career, year, "ACEPTADO");
-        long rejected = applicantRepo.countByCareerAndAdmissionYearAndStatus(career, year, "RECHAZADO");
-        long pending = requestRepo.countPendingByNewCareerAndYear(career, year);
+        // inscritosCount se obtiene contándolos en applicants (lo que pides)
+        long inscritos = applicantRepo.countByCareerAndAdmissionYear(career, year);
+        v.setInscritosCount(safeLongToInt(inscritos));
 
-        long totalDecisions = accepted + rejected;
-
-        v.setAcceptedCount(safeLongToInt(accepted));
-        v.setRejectedCount(safeLongToInt(rejected));
-        v.setPendingCount(safeLongToInt(pending));
-        v.setTotalCount(safeLongToInt(totalDecisions)); // opcional, según cómo uses totalCount
-
-        // availableSlots = cuposInserted - inscritosCount (inscritosCount proviene del
-        // excel)
         int cupos = Optional.ofNullable(v.getCuposInserted()).orElse(0);
-        int inscritos = Optional.ofNullable(v.getInscritosCount()).orElse(0);
-        int available = Math.max(0, cupos - inscritos);
-
+        int available = Math.max(0, cupos - (int) inscritos);
         v.setAvailableSlots(available);
+
         vacancyRepo.save(v);
     }
 
@@ -177,5 +143,5 @@ public class VacancyServiceImpl implements VacancyService {
             return Integer.MIN_VALUE;
         return (int) value;
     }
-    
+
 }

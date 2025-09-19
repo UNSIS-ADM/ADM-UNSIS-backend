@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,19 +60,6 @@ public class CareerChangeServiceImpl implements CareerChangeService {
             throw new RuntimeException("Cupo agotado para " + nuevaCarrera);
         }
 
-        // Reservar: incrementar pendingCount y recalcular availableSlots
-        int pendingNow = vac.getPendingCount() != null ? vac.getPendingCount() : 0;
-        vac.setPendingCount(pendingNow + 1);
-
-        int acceptedNow = vac.getAcceptedCount() != null ? vac.getAcceptedCount() : 0;
-        int rejectedNow = vac.getRejectedCount() != null ? vac.getRejectedCount() : 0;
-        int totalDecisions = acceptedNow + rejectedNow;
-        int limit = vac.getLimitCount() != null ? vac.getLimitCount() : 0;
-
-        int newAvailable = Math.max(0, limit - totalDecisions - (pendingNow + 1));
-        vac.setAvailableSlots(newAvailable);
-
-        vacancyRepo.save(vac);
 
         // 5) Crear solicitud
         CareerChangeRequest solicitud = new CareerChangeRequest();
@@ -87,6 +75,7 @@ public class CareerChangeServiceImpl implements CareerChangeService {
         // 6) Marcar al aspirante como "Solicitud en proceso"
         app.setStatus("Solicitud en proceso");
         applicantRepo.save(app);
+
         return toDto(solicitud);
     }
 
@@ -130,85 +119,40 @@ public class CareerChangeServiceImpl implements CareerChangeService {
         String accion = dto.getAction() != null ? dto.getAction().trim().toUpperCase() : "";
 
         if ("ACEPTADO".equalsIgnoreCase(accion)) {
-            // ACEPTAR: consume la reserva ya hecha en submit
+            // Re-verificar disponibilidad atómica (vacNueva está for update)
+            int availableNow = Optional.ofNullable(vacNueva.getAvailableSlots()).orElse(0);
+            if (availableNow <= 0) {
+                throw new RuntimeException("Ya no hay cupos disponibles para " + nuevaCarrera);
+            }
+
+            // Aceptar: mover al applicant a la nueva carrera
             solicitud.setStatus("ACEPTADO");
 
-            app.setCareer(nuevaCarrera); // cambia a la nueva carrera
+            // Guarda carrera anterior para recalcular su vacante después
+            String oldCareer = app.getCareer();
+
+            app.setCareer(nuevaCarrera);
             app.setStatus("ACEPTADO");
             applicantRepo.save(app);
 
-            // actualizar vacante: pending--, accepted++, total++
-            int acceptedCount = vacNueva.getAcceptedCount() != null ? vacNueva.getAcceptedCount() : 0;
-            int pendingCount = vacNueva.getPendingCount() != null ? vacNueva.getPendingCount() : 0;
-            int rejectedCount = vacNueva.getRejectedCount() != null ? vacNueva.getRejectedCount() : 0;
-
-            vacNueva.setPendingCount(Math.max(0, pendingCount - 1));
-            vacNueva.setAcceptedCount(acceptedCount + 1);
-            vacNueva.setTotalCount((acceptedCount + 1) + rejectedCount);
-
-            // recalcular availableSlots = limit - total - pending
-            int limit = vacNueva.getLimitCount() != null ? vacNueva.getLimitCount() : 0;
-            int availableAfter = Math.max(0, limit - vacNueva.getTotalCount() - vacNueva.getPendingCount());
-            vacNueva.setAvailableSlots(availableAfter);
-
-            vacancyRepo.save(vacNueva);
-        } else if ("RECHAZADO".equalsIgnoreCase(accion))
-
-        {
-            // RECHAZAR: retorna la reserva a la NUEVA carrera
-            solicitud.setStatus("RECHAZADO");
-
-            /*/ Restaurar el status previo (CASO 1 y 4)
-            String previo = solicitud.getOldStatus();
-            if ("ACEPTADO".equalsIgnoreCase(previo)) {
-                app.setStatus("ACEPTADO"); // CASO 1
-            } else if ("RECHAZADO".equalsIgnoreCase(previo)) {
-                app.setStatus("RECHAZADO"); // CASO 4
-            } else {
-                app.setStatus("RECHAZADO"); // por defecto si no hubiera dato
+            // Recalcular vacantes para carrera destino y origen (si existe)
+            recalculateVacancyFromApplicants(nuevaCarrera, año);
+            if (oldCareer != null && !oldCareer.trim().isEmpty()) {
+                recalculateVacancyFromApplicants(oldCareer, año);
             }
-            // La carrera NO cambia en rechazo: se queda en su carrera original (oldCareer).
 
-            // Devolver la reserva a la NUEVA carrera
-            vacNueva.setAvailableSlots(vacNueva.getAvailableSlots() + 1);
-            vacancyRepo.save(vacNueva);
-
-            applicantRepo.save(app);
-            */
-
-            // No restauramos applicant.status al previo, sino que lo marcamos RECHAZADO
-            // (según tu requerimiento de no restaurar)
+            vacancyRepo.flush(); // opcional: forzar sincronización
+        } else if ("RECHAZADO".equalsIgnoreCase(accion)) {
+            // Rechazar: no devolvemos cupo, no tocamos vacantes (según tu política)
+            solicitud.setStatus("RECHAZADO");
             app.setStatus("RECHAZADO");
             applicantRepo.save(app);
-
-            // No incrementamos vacNueva.availableSlots (la reserva NO se devuelve)
-            // vacancyRepo.save(vacNueva); // <-- intencionalmente NO lo hacemos
-
-            // actualizar vacante: pending--, rejected++, total++
-            int acceptedCount = vacNueva.getAcceptedCount() != null ? vacNueva.getAcceptedCount() : 0;
-            int pendingCount = vacNueva.getPendingCount() != null ? vacNueva.getPendingCount() : 0;
-            int rejectedCount = vacNueva.getRejectedCount() != null ? vacNueva.getRejectedCount() : 0;
-
-            vacNueva.setPendingCount(Math.max(0, pendingCount - 1));
-            vacNueva.setRejectedCount(rejectedCount + 1);
-            vacNueva.setTotalCount(acceptedCount + (rejectedCount + 1));
-
-            // NO incrementamos availableSlots; recalculamos availableSlots = limit - total
-            // - pending (esto reflejará que no devuelve cupo)
-            int limit = vacNueva.getLimitCount() != null ? vacNueva.getLimitCount() : 0;
-            int availableAfter = Math.max(0, limit - vacNueva.getTotalCount() - vacNueva.getPendingCount());
-            vacNueva.setAvailableSlots(availableAfter);
-
-            vacancyRepo.save(vacNueva);
-
         } else {
             throw new RuntimeException("Acción inválida. Usa 'ACEPTADO' o 'RECHAZADO'.");
         }
 
         CareerChangeRequest saved = reqRepo.save(solicitud);
-        return
-
-        toDto(saved);
+        return toDto(saved);
     }
     
     private CareerChangeRequestDTO toDto(CareerChangeRequest r) {
@@ -238,5 +182,32 @@ public class CareerChangeServiceImpl implements CareerChangeService {
             return List.of();
         return reqRepo.findByApplicant(app).stream().map(this::toDto).collect(Collectors.toList());
     }
+    
+    /**
+     * Recalcula inscritosCount y availableSlots para una carrera y año
+     * basándose en el conteo real de applicants.
+     */
+    private void recalculateVacancyFromApplicants(String career, int year) {
+        Vacancy vac = vacancyRepo.findByCareerAndAdmissionYear(career, year)
+                .orElseGet(() -> {
+                    Vacancy nv = new Vacancy();
+                    nv.setCareer(career);
+                    nv.setAdmissionYear(year);
+                    nv.setCuposInserted(0);
+                    nv.setInscritosCount(0);
+                    nv.setAvailableSlots(0);
+                    return nv;
+                });
+
+        long inscritos = applicantRepo.countByCareerAndAdmissionYear(career, year);
+        vac.setInscritosCount((int) inscritos);
+
+        int cupos = Optional.ofNullable(vac.getCuposInserted()).orElse(0);
+        int available = Math.max(0, cupos - (int) inscritos);
+        vac.setAvailableSlots(available);
+
+        vacancyRepo.save(vac);
+    }
+
 }
 

@@ -238,11 +238,6 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                             Vacancy nv = new Vacancy();
                             nv.setCareer(career);
                             nv.setAdmissionYear(year);
-                            // inicializa nuevos campos para que no sean null
-                            nv.setLimitCount(0);
-                            nv.setAcceptedCount(0);
-                            nv.setRejectedCount(0);
-                            nv.setPendingCount(0);
                             nv.setInscritosCount(0); // nuevo campo
                             nv.setCuposInserted(0); // nuevo campo (se actualiza desde el front)
                             nv.setAvailableSlots(0);
@@ -257,24 +252,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                     changed = true;
                 }
 
-                // 2) accepted / pending (y rejected si lo usas)
-                if (!Objects.equals(v.getAcceptedCount(), acc)) {
-                    v.setAcceptedCount(acc);
-                    changed = true;
-                }
-
-                // Si tu diseño requiere store de "rejected", escribe en su campo; en tu ejemplo
-                // guardabas en pending
-                if (!Objects.equals(v.getPendingCount(), rej)) {
-                    v.setPendingCount(rej);
-                    changed = true;
-                }
-
-                // (Opcional) si tienes campo rejectedCount separado:
-                // if (!Objects.equals(v.getRejectedCount(), rej)) { v.setRejectedCount(rej);
-                // changed = true; }
-
-                // 3) Recalcular availableSlots = cuposInserted - inscritosCount
+                // 2) Recalcular availableSlots = cuposInserted - inscritosCount
                 int cupos = Optional.ofNullable(v.getCuposInserted()).orElse(0);
                 int inscritos = Optional.ofNullable(v.getInscritosCount()).orElse(0);
                 int available = Math.max(0, cupos - inscritos);

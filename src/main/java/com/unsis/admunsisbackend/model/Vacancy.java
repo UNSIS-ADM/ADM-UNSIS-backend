@@ -17,26 +17,11 @@ public class Vacancy {
     @Column(name = "admission_year", nullable = false)
     private Integer admissionYear;
 
-    @Column(name = "limit_count", nullable = false)
-    private Integer limitCount;
-
     @Column(name = "inscritos_count", nullable = false)
     private Integer inscritosCount = 0;
 
     @Column(name = "cupos_inserted", nullable = false)
     private Integer cuposInserted = 0;
-
-    @Column(name = "accepted_count", nullable = false)
-    private Integer acceptedCount;
-
-    @Column(name = "rejected_count")
-    private Integer rejectedCount = 0;
-
-    @Column(name = "pending_count", nullable = false)
-    private Integer pendingCount;
-
-    @Column(name = "total_count")
-    private Integer totalCount = 0; 
 
     @Column(name = "available_slots", nullable = false)
     private Integer availableSlots;
@@ -46,6 +31,11 @@ public class Vacancy {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    
+    @Column(name = "limit_count")
+    private Integer limitCount = 0;
+
+    
 
     @PrePersist
     protected void onCreate() {
@@ -59,6 +49,13 @@ public class Vacancy {
     }
 
     // getters & setters...
+    public Integer getLimitCount() {
+        return limitCount;
+    }
+
+    public void setLimitCount(Integer limitCount) {
+        this.limitCount = limitCount;
+    }
 
     public Long getId() {
         return id;
@@ -84,26 +81,6 @@ public class Vacancy {
         this.admissionYear = admissionYear;
     }
 
-    public Integer getAcceptedCount() {
-        return acceptedCount;
-    }
-
-    public void setAcceptedCount(Integer acceptedCount) {
-        this.acceptedCount = acceptedCount;
-    }
-
-    public Integer getPendingCount() {
-        return pendingCount;
-    }
-
-    public void setPendingCount(Integer pendingCount) {
-        this.pendingCount = pendingCount;
-    }
-
-    public Integer getLimitCount() {
-        return limitCount;
-    }
-
     public Integer getInscritosCount() {
         return inscritosCount;
     }
@@ -119,26 +96,6 @@ public class Vacancy {
     public void setCuposInserted(Integer cuposInserted) {
         this.cuposInserted = cuposInserted;
     }
-    
-    public Integer getRejectedCount() {
-        return rejectedCount == null ? 0 : rejectedCount;
-    }
-
-    public void setRejectedCount(Integer rejectedCount) {
-        this.rejectedCount = rejectedCount;
-    }
-
-    public Integer getTotalCount() {
-        return totalCount == null ? 0 : totalCount;
-    }
-
-    public void setTotalCount(Integer totalCount) {
-        this.totalCount = totalCount;
-    }
-
-    public void setLimitCount(Integer limitCount) {
-        this.limitCount = limitCount;
-    }
 
     public Integer getAvailableSlots() {
         return availableSlots;
@@ -148,7 +105,7 @@ public class Vacancy {
         this.availableSlots = availableSlots;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public LocalDateTime getCreatedAt() {  
         return createdAt;
     }
 

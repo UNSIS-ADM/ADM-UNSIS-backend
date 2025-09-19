@@ -9,3 +9,4 @@ public interface VacancyService {
     List<VacancyDTO> recalculateAll(Integer year);
     VacancyDTO recalculateOne(String career, Integer year);
 }
+

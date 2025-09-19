@@ -103,9 +103,16 @@ public class ApplicantServiceImpl implements ApplicantService {
         long inscritos = applicantRepo.countByCareerAndAdmissionYear(newCareer, year);
         Vacancy vac = vacancyRepo.findByCareerAndAdmissionYear(newCareer, year)
                 .orElseThrow(() -> new RuntimeException("Vacantes no configuradas para " + newCareer + " en " + year));
-        if (inscritos >= vac.getLimitCount()) {
+        if (inscritos >= vac.getCuposInserted()) {
             throw new RuntimeException("Cupo agotado para " + newCareer);
         }
+        /**
+         * int available = Optional.ofNullable(vac.getAvailableSlots()).orElse(0);
+         * if (available <= 0) {
+         * throw new RuntimeException("Cupo agotado para " + newCareer);
+         * }
+         * 
+         */
 
         // todo OK → actualizar
         a.setCareer(newCareer);

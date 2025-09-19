@@ -5,12 +5,9 @@ import com.unsis.admunsisbackend.model.Vacancy;
 public class VacancyDTO {
     private String career;
     private Integer admissionYear;
-    private Integer limitCount;
-    private Integer inscritosCount;
-    private Integer cuposInserted;
-    private Integer acceptedCount;
-    private Integer pendingCount;
-    private Integer availableSlots;
+    private Integer inscritosCount; // proveniente del excel / recálculo
+    private Integer cuposInserted; // fijado por admin (param limit)
+    private Integer availableSlots; // calculado
 
     // getters/setters omitted
     public String getCareer() {
@@ -29,14 +26,6 @@ public class VacancyDTO {
         this.admissionYear = admissionYear;
     }
 
-    public Integer getLimitCount() {
-        return limitCount;
-    }
-
-    public void setLimitCount(Integer limitCount) {
-        this.limitCount = limitCount;
-    }
-
     public Integer getInscritosCount() {
         return inscritosCount;
     }
@@ -53,22 +42,6 @@ public class VacancyDTO {
         this.cuposInserted = cuposInserted;
     }
 
-    public Integer getAcceptedCount() {
-        return acceptedCount;
-    }
-
-    public void setAcceptedCount(Integer acceptedCount) {
-        this.acceptedCount = acceptedCount;
-    }
-
-    public Integer getPendingCount() {
-        return pendingCount;
-    }
-
-    public void setPendingCount(Integer pendingCount) {
-        this.pendingCount = pendingCount;
-    }
-
     public Integer getAvailableSlots() {
         return availableSlots;
     }
@@ -81,7 +54,8 @@ public class VacancyDTO {
         VacancyDTO d = new VacancyDTO();
         d.setCareer(v.getCareer());
         d.setAdmissionYear(v.getAdmissionYear());
-        d.setLimitCount(v.getLimitCount());
+        d.setInscritosCount(v.getInscritosCount());
+        d.setCuposInserted(v.getCuposInserted());
         d.setAvailableSlots(v.getAvailableSlots());
         return d;
     }

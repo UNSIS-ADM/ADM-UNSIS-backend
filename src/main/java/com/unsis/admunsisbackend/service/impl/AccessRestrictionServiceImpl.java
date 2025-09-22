@@ -35,11 +35,11 @@ public class AccessRestrictionServiceImpl implements AccessRestrictionService {
 
         Optional<AccessRestriction> opt = repo.findFirstByRoleName(ROLE_APPLICANT);
         if (opt.isEmpty())
-            return true; // sin regla => permitir
+            return false; // sin regla => DENEGAR ACCESO A ASPIRANTES
 
         AccessRestriction rule = opt.get();
 
-        // NUEVO: si la regla está deshabilitada -> DENEGAR
+        // Si la regla está deshabilitada -> DENEGAR ACCESO A ASPIRANTES
         if (!rule.isEnabled()) {
             return false;
         }
@@ -62,7 +62,7 @@ public class AccessRestrictionServiceImpl implements AccessRestrictionService {
         } else if (timeDefined) {
             return !nowTime.isBefore(activationTime);
         } else {
-            // habilitada pero sin moment configurado -> permitir
+            // Habilitada pero sin regla configurado -> PERMITIR ACCESO
             return true;
         }
     }

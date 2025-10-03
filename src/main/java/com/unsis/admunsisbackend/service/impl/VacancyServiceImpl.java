@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+
 @Service
 public class VacancyServiceImpl implements VacancyService {
 
@@ -31,6 +32,16 @@ public class VacancyServiceImpl implements VacancyService {
     public List<VacancyDTO> listVacancies(Integer year) {
         int y = (year != null ? year : Year.now().getValue());
         return vacancyRepo.findByAdmissionYear(y).stream().map(VacancyDTO::fromEntity).collect(Collectors.toList());
+    }
+    
+    public VacancyServiceImpl(VacancyRepository vacancyRepo) {
+        this.vacancyRepo = vacancyRepo;
+    }
+
+    // Normalizar minimal: trim (dejamos mayúsculas/acentos igual para respetar
+    // texto original)
+    private String normalizeCareer(String career) {
+        return career == null ? null : career.trim();
     }
 
     @Override
@@ -142,6 +153,50 @@ public class VacancyServiceImpl implements VacancyService {
         if (value < Integer.MIN_VALUE)
             return Integer.MIN_VALUE;
         return (int) value;
+    }
+
+     @Override
+    @Transactional
+    public Vacancy updateCuposInserted(String career, Integer admissionYear, Integer limit) {
+        if (career == null || admissionYear == null || limit == null) {
+            throw new IllegalArgumentException("career, admissionYear y limit son requeridos");
+        }
+
+        String normCareer = normalizeCareer(career);
+        // Buscar vacancy (si no existe la creamos con inscritosCount = 0, pero NO lo recalculamos desde applicants)
+        Vacancy v = vacancyRepo.findByCareerAndAdmissionYear(normCareer, admissionYear)
+                .orElseGet(() -> {
+                    Vacancy nv = new Vacancy();
+                    nv.setCareer(normCareer);
+                    nv.setAdmissionYear(admissionYear);
+                    nv.setInscritosCount(0); // respetamos que Excel será la fuente (si luego subes Excel lo actualizará)
+                    nv.setCuposInserted(0);
+                    nv.setReservedCount(0);
+                    nv.setAvailableSlots(0);
+                    return nv;
+                });
+
+        boolean changed = false;
+
+        // Actualizamos solo CUPOS (source of truth para inscritos sigue siendo Excel)
+        if (!Optional.ofNullable(v.getCuposInserted()).orElse(0).equals(limit)) {
+            v.setCuposInserted(limit);
+            changed = true;
+        }
+
+        // Recalcular availableSlots con INSCRITOS que ya están guardados (no cambiamos inscritosCount)
+        int inscritos = Optional.ofNullable(v.getInscritosCount()).orElse(0);
+        int available = Math.max(0, limit - inscritos);
+        if (!Optional.ofNullable(v.getAvailableSlots()).orElse(0).equals(available)) {
+            v.setAvailableSlots(available);
+            changed = true;
+        }
+
+        if (changed) {
+            return vacancyRepo.save(v);
+        } else {
+            return v; // sin cambios
+        }
     }
 
 }

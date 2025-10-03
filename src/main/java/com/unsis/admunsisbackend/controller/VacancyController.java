@@ -1,9 +1,10 @@
 package com.unsis.admunsisbackend.controller;
 
-
 import com.unsis.admunsisbackend.dto.VacancyDTO;
+import com.unsis.admunsisbackend.model.Vacancy;
 import com.unsis.admunsisbackend.service.VacancyService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,15 +24,26 @@ public class VacancyController {
         return vacancyService.listVacancies(year);
     }
 
-    /** Crear o actualizar cupo de una carrera para un año */
+
+      // PUT /api/admin/vacancies/{career}?year=2025&limit=10
     @PutMapping("/{career}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public VacancyDTO upsert(
-            @PathVariable String career,
+    public ResponseEntity<?> updateCupos(
+            @PathVariable("career") String career,
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer limit) {
-        return vacancyService.upsertVacancy(career, year, limit);
+
+        try {
+            Vacancy v = vacancyService.updateCuposInserted(career, year, limit);
+            return ResponseEntity.ok(v);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        } catch (Exception ex) {
+            // Log el error real en logger
+            return ResponseEntity.status(500).body("Error al actualizar cupos: " + ex.getMessage());
+        }
     }
+
 
     /** Recalcula todos los contadores (accepted/pending/available) */
     @PutMapping("/recalculate")

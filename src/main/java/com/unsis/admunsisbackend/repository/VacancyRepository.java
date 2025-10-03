@@ -31,5 +31,11 @@ public interface VacancyRepository extends JpaRepository<Vacancy, Long> {
             @Param("year") int year,
             @Param("cupos") int cuposInserted,
             @Param("available") int availableSlots);
+    
+    // Búsqueda que normaliza (TRIM + UPPER) para evitar falsos mismatches por
+    // espacios/case
+    @Query("SELECT v FROM Vacancy v WHERE UPPER(TRIM(v.career)) = UPPER(TRIM(:career)) AND v.admissionYear = :year")
+    Optional<Vacancy> findByCareerAndAdmissionYear(@Param("career") String career, @Param("year") Integer year);
+
 
 }

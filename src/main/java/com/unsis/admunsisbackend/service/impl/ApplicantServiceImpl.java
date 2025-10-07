@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -255,14 +256,31 @@ public class ApplicantServiceImpl implements ApplicantService {
         return toDto(saved);
     }
 
+    //Tomar asistencia
+    @Transactional
+public ApplicantResponseDTO markAttendance(Long applicantId, String status, String marcadorUsername) {
+    Applicant a = applicantRepo.findById(applicantId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aspirante no encontrado"));
+
+    if (status == null) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status requerido: ASISTIÓ o NP");
+    }
+
+    String s = status.trim().toUpperCase();
+    if (!s.equals("ASISTIÓ") && !s.equals("NP")) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status inválido. Usar ASISTIÓ o NP");
+    }
+
+    a.setAttendanceStatus(s);
+    Applicant saved = applicantRepo.save(a);
+    return toDto(saved);
+}
+
     private ApplicantResponseDTO toDto(Applicant a) {
     ApplicantResponseDTO dto = new ApplicantResponseDTO();
     dto.setId(a.getId());
     dto.setFicha(a.getFicha());
     dto.setCurp(a.getCurp());
-    // No confiar en un campo inexistente en applicants
-    // dto.setCareerAtResult(a.getCareerAtResult());
-
     dto.setFullName(a.getUser() != null ? a.getUser().getFullName() : null);
     dto.setCareer(a.getCareer());
     dto.setLocation(a.getLocation());
@@ -280,6 +298,8 @@ public class ApplicantServiceImpl implements ApplicantService {
         dto.setComment(res.getComment());
         // Opcional: dto.setStatus(res.getStatus()); si quieres mostrar el status del resultado
     });
+
+    dto.setAttendanceStatus(a.getAttendanceStatus());
 
     return dto;
 }

@@ -17,6 +17,7 @@ public class ApplicantResponseDTO {
     private String status;  
     private String comment;    
     private BigDecimal score;
+    private String AttendanceStatus; // ASISTIO | ASISTIÓ | NP
     private Integer admissionYear;
     private LocalDateTime lastLogin;
     private LocalDateTime resultDate;
@@ -141,4 +142,13 @@ public class ApplicantResponseDTO {
     public void setScore(BigDecimal score) {
         this.score = score;
     }
+
+    public String getAttendanceStatus() {
+        return AttendanceStatus;
+    }
+
+    public void setAttendanceStatus(String AttendanceStatus) {
+        this.AttendanceStatus = AttendanceStatus;
+    }
+
 }

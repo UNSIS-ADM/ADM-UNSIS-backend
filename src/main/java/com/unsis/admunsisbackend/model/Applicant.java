@@ -42,6 +42,9 @@ public class Applicant {
 
     private String status = "PENDING";
 
+    @Column(name = "attendance_status", length = 10)
+    private String AttendanceStatus; // "ASISTIO" | "NP"
+
     @Column(name = "admission_year", nullable = false)
     private Integer admissionYear;
 
@@ -127,6 +130,14 @@ public class Applicant {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getAttendanceStatus() {
+        return AttendanceStatus;
+    }
+
+    public void setAttendanceStatus(String AttendanceStatus) {
+        this.AttendanceStatus = AttendanceStatus;
     }
 
     public User getUser() {

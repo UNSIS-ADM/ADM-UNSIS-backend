@@ -16,7 +16,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -36,14 +35,6 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())// Desactivar CSRF para pruebas con Postman
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1 .requestMatchers("/auth/**").permitAll()
-                        // 5 .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                        // 6 .requestMatchers("/api/user/**") .hasAuthority("ROLE_USER")
-                        // 7 .requestMatchers("/api/applicant/**").hasAuthority("ROLE_APPLICANT")
-                        // 2 .requestMatchers("/api/admin/upload-results").hasAuthority("ROLE_ADMIN")
-                        // 3 .requestMatchers("/api/admin/results").hasAnyAuthority("ROLE_ADMIN","ROLE_USER")
-                        // 4 .requestMatchers("/api/admin/access-restriction/**").hasRole("ADMIN")
-
                         .requestMatchers("/auth/**").permitAll()
                         // Reglas específicas primero
                         .requestMatchers("/api/admin/upload-results").hasAuthority("ROLE_ADMIN")
@@ -67,8 +58,6 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
-        // configuration.setAllowedOrigins(Collections.singletonList("*")); // Cambia
-        // esto por tu URL de frontend
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization",

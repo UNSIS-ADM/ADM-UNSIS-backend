@@ -26,6 +26,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import java.time.ZoneId;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
 @Service
 public class ExcelServiceImpl implements ExcelService {
     private static final Logger logger = LoggerFactory.getLogger(ExcelServiceImpl.class);
@@ -60,10 +65,10 @@ public class ExcelServiceImpl implements ExcelService {
 
     @Autowired
     private ApplicantRepository applicantRepository;
-/**
-    @Autowired
-    private VacancyRepository vacancyRepository;
-*/
+    /**
+     * @Autowired
+     *            private VacancyRepository vacancyRepository;
+     */
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -153,10 +158,12 @@ public class ExcelServiceImpl implements ExcelService {
             throw new RuntimeException("Carrera no válida");
         }
 
-        /* Validar usuario existente no exista ya por CURP
-        if (userRepository.existsByUsername(curp)) {
-            throw new RuntimeException("El usuario con CURP ya está registrado");
-        }*/
+        /*
+         * Validar usuario existente no exista ya por CURP
+         * if (userRepository.existsByUsername(curp)) {
+         * throw new RuntimeException("El usuario con CURP ya está registrado");
+         * }
+         */
         // Validar usuario existente por username (ficha)
         if (userRepository.existsByUsername(fichaStr)) {
             throw new RuntimeException("El usuario (ficha) ya está registrado: " + fichaStr);
@@ -166,25 +173,27 @@ public class ExcelServiceImpl implements ExcelService {
         if (applicantRepository.existsByCurp(curp)) {
             throw new RuntimeException("Ya existe un usuario con esta CURP");
         }
-    /*
-        Long fichaExcel = Long.valueOf(getCellValue(row.getCell(0)));
-        String fichaStr = fichaExcel.toString();
-    */
-/*
-        // ** INTEGRACIÓN DE VALIDACIÓN DE VACANTES: **
-        int currentYear = Year.now().getValue();
-        long inscritos = applicantRepository.countByCareerAndAdmissionYear(career, currentYear);
-
-        var vac = vacancyRepository
-                .findByCareerAndAdmissionYear(career, currentYear)
-                .orElseThrow(
-                        () -> new RuntimeException("Vacantes no configuradas para " + career + " en " + currentYear));
-
-        if (inscritos >= vac.getLimitCount()) {
-            throw new RuntimeException("Cupo agotado para " + career);
-        }
-        // ** fin de la integración **
-*/
+        /*
+         * Long fichaExcel = Long.valueOf(getCellValue(row.getCell(0)));
+         * String fichaStr = fichaExcel.toString();
+         */
+        /*
+         * // ** INTEGRACIÓN DE VALIDACIÓN DE VACANTES: **
+         * int currentYear = Year.now().getValue();
+         * long inscritos = applicantRepository.countByCareerAndAdmissionYear(career,
+         * currentYear);
+         * 
+         * var vac = vacancyRepository
+         * .findByCareerAndAdmissionYear(career, currentYear)
+         * .orElseThrow(
+         * () -> new RuntimeException("Vacantes no configuradas para " + career + " en "
+         * + currentYear));
+         * 
+         * if (inscritos >= vac.getLimitCount()) {
+         * throw new RuntimeException("Cupo agotado para " + career);
+         * }
+         * // ** fin de la integración **
+         */
         // Crear usuario
         User user = new User();
         user.setUsername(fichaStr); // login = ficha
@@ -194,19 +203,53 @@ public class ExcelServiceImpl implements ExcelService {
         user.setRoles(Set.of(applicantRole));
         user = userRepository.save(user);
 
-        // Extraer fecha de examen
-        String examDateStr = getCellValue(row.getCell(6));
-
+        // EXTRAER fecha de examen (soporta celdas tipo fecha y texto con varios
+        // patterns)
         LocalDateTime examDate = null;
-        if (!examDateStr.isBlank()) {
-            try{
-            examDate = LocalDateTime.parse(
-                    examDateStr,
-                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-            } catch (Exception ex) {
-                // Si falla el parseo estricto, lo dejamos null (o logueamos)
-                logger.warn("No se pudo parsear Fecha Examen '{}' en fila {}", examDateStr, row.getRowNum() + 1);
-                examDate = null;
+        Cell examCell = row.getCell(6);
+
+        if (examCell != null) {
+            // 1) Si la celda es NUMERIC y está formateada como fecha en Excel
+            if (examCell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(examCell)) {
+                Date date = examCell.getDateCellValue(); // java.util.Date
+                examDate = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
+            } else {
+                // 2) Si la celda es STRING (o NUMERIC no-formateado), intentamos parsear con
+                // varios patrones
+                String examDateStr = getCellValue(examCell);
+                if (!examDateStr.isBlank()) {
+                    // patrones permitidos (añade más si los necesitas)
+                    DateTimeFormatter[] fmts = new DateTimeFormatter[] {
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"),
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+                            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"),
+                            DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                    };
+
+                    boolean parsed = false;
+                    for (DateTimeFormatter fmt : fmts) {
+                        try {
+                            if (fmt.toString().contains("H")) {
+                                // patrón con hora -> LocalDateTime
+                                examDate = LocalDateTime.parse(examDateStr, fmt);
+                            } else {
+                                // patrón solo fecha -> LocalDate a medianoche
+                                LocalDate d = LocalDate.parse(examDateStr, fmt);
+                                examDate = d.atStartOfDay();
+                            }
+                            parsed = true;
+                            break;
+                        } catch (DateTimeParseException pe) {
+                            // intentar siguiente patrón
+                        }
+                    }
+
+                    if (!parsed) {
+                        logger.warn("No se pudo parsear Fecha Examen '{}' en fila {}", examDateStr,
+                                row.getRowNum() + 1);
+                        examDate = null;
+                    }
+                }
             }
         }
 
@@ -221,7 +264,7 @@ public class ExcelServiceImpl implements ExcelService {
         applicant.setExamDate(examDate);
         applicant.setExamAssigned(false);
         applicant.setStatus("PENDIENTE");
-//      applicant.setAdmissionYear(currentYear);
+        // applicant.setAdmissionYear(currentYear);
         applicant.setAdmissionYear(Year.now().getValue());
         applicantRepository.save(applicant);
     }
@@ -234,7 +277,34 @@ public class ExcelServiceImpl implements ExcelService {
             case STRING:
                 return cell.getStringCellValue().trim();
             case NUMERIC:
-                return String.valueOf((int) cell.getNumericCellValue());
+                // Si la celda es fecha y quieres un string, podrías formatearla aquí,
+                // pero preferimos manejar fechas en processRow con
+                // DateUtil.isCellDateFormatted.
+                double d = cell.getNumericCellValue();
+                if (d == Math.floor(d)) {
+                    // entero
+                    return String.valueOf((long) d);
+                } else {
+                    // decimal: evitar notación científica
+                    return BigDecimal.valueOf(d).stripTrailingZeros().toPlainString();
+                }
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                // intentar el resultado cached de la fórmula
+                switch (cell.getCachedFormulaResultType()) {
+                    case STRING:
+                        return cell.getStringCellValue().trim();
+                    case NUMERIC:
+                        double v = cell.getNumericCellValue();
+                        if (v == Math.floor(v))
+                            return String.valueOf((long) v);
+                        else
+                            return BigDecimal.valueOf(v).stripTrailingZeros().toPlainString();
+                    default:
+                        return "";
+                }
+            case BLANK:
             default:
                 return "";
         }

@@ -28,12 +28,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // Inyectamos el JwtTokenProvider para validar y extraer información del token JWT
     @Autowired
     private JwtTokenProvider tokenProvider;
-
     // Inyectamos el UserDetailsService para cargar los detalles del usuario
     @Autowired
-    private UserDetailsService userDetailsService; 
-
-
+    private UserDetailsService userDetailsService;
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     @Autowired
@@ -45,8 +42,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // Método que se ejecuta para cada solicitud HTTP
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain) throws ServletException, IOException {
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
             logger.info("URL solicitada: " + request.getRequestURL());

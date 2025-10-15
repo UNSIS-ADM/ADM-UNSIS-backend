@@ -14,9 +14,10 @@ public class ApplicantResponseDTO {
     private String location;
     private String examRoom;
     private LocalDateTime examDate;
-    private String status;  
-    private String comment;    
+    private String status;
+    private String comment;
     private BigDecimal score;
+    private BigDecimal finalGrade;
     private String AttendanceStatus; // ASISTIO | ASISTIÓ | NP
     private Integer admissionYear;
     private LocalDateTime lastLogin;
@@ -141,6 +142,14 @@ public class ApplicantResponseDTO {
 
     public void setScore(BigDecimal score) {
         this.score = score;
+    }
+
+    public BigDecimal getFinalGrade() {
+        return finalGrade;
+    }
+
+    public void setFinalGrade(BigDecimal finalGrade) {
+        this.finalGrade = finalGrade;
     }
 
     public String getAttendanceStatus() {

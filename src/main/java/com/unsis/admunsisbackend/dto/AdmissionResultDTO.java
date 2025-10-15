@@ -13,6 +13,7 @@ public class AdmissionResultDTO {
     private String status;
     private String comment;
     private BigDecimal score;
+    private BigDecimal finalGrade;
     private Integer admissionYear;
     private LocalDateTime createdAt;
     private LocalDateTime lastLogin;
@@ -89,6 +90,14 @@ public class AdmissionResultDTO {
 
     public void setScore(BigDecimal score) {
         this.score = score;
+    }
+
+    public BigDecimal getFinalGrade() {
+        return finalGrade;
+    }
+
+    public void setFinalGrade(BigDecimal finalGrade) {
+        this.finalGrade = finalGrade;
     }
 
     public Integer getAdmissionYear() {

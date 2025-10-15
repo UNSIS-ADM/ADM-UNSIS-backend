@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Year;
+//import javax.persistence.Column;
+import jakarta.persistence.Column;
 
 @Entity
 @Table(name = "admission_results")
@@ -28,6 +30,9 @@ public class AdmissionResult {
 
     @Column(precision = 5, scale = 2)
     private BigDecimal score;
+
+    @Column(name = "final_grade")
+    private BigDecimal finalGrade;
 
     @Column(name = "admission_year", nullable = false)
     private Integer admissionYear;
@@ -88,6 +93,14 @@ public class AdmissionResult {
 
     public void setScore(BigDecimal score) {
         this.score = score;
+    }
+
+    public BigDecimal getFinalGrade() {
+        return finalGrade;
+    }
+
+    public void setFinalGrade(BigDecimal finalGrade) {
+        this.finalGrade = finalGrade;
     }
 
     public Integer getAdmissionYear() {

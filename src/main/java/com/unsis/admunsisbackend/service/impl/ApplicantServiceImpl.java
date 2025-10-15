@@ -130,6 +130,7 @@ public class ApplicantServiceImpl implements ApplicantService {
         admissionResultRepo.findTopByApplicantOrderByCreatedAtDesc(a).ifPresent(res -> {
             dto.setCareerAtResult(res.getCareerAtResult());
             dto.setScore(res.getScore()); // necesitarías añadir score en ApplicantResponseDTO si quieres mostrarlo
+            dto.setFinalGrade(res.getFinalGrade());
             dto.setResultDate(res.getCreatedAt()); // añade campo resultDate en DTO si hace falta
         });
 
@@ -198,6 +199,8 @@ public class ApplicantServiceImpl implements ApplicantService {
             a.setExamAssigned(dto.getExamAssigned());
         if (dto.getExamDate() != null)
             a.setExamDate(dto.getExamDate());
+        if (dto.getFinalGrade() != null)
+            a.setFinalGrade(dto.getFinalGrade());
         if (dto.getAdmissionYear() != null)
             a.setAdmissionYear(dto.getAdmissionYear());
             
@@ -294,6 +297,7 @@ public ApplicantResponseDTO markAttendance(Long applicantId, String status, Stri
     admissionResultRepo.findTopByApplicantOrderByCreatedAtDesc(a).ifPresent(res -> {
         dto.setCareerAtResult(res.getCareerAtResult());
         dto.setScore(res.getScore());
+        dto.setFinalGrade(res.getFinalGrade());
         dto.setResultDate(res.getCreatedAt());
         dto.setComment(res.getComment());
         // Opcional: dto.setStatus(res.getStatus()); si quieres mostrar el status del resultado

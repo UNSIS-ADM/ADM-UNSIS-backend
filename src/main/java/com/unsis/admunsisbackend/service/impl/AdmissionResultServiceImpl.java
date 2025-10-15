@@ -27,7 +27,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
 
     private static final String[] HEADERS = {
             "CURP", "Nombre completo", "Carrera",
-            "Resultado", "Comentario", "Puntaje"
+            "Resultado", "Comentario", "Puntaje", "Calificación"
     };
 
     @Autowired
@@ -69,7 +69,8 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
             String curp;
             String result;
             String comentario;
-            Double rawScore;
+            Double rawScore; // Puntaje
+            Double rawFinalGrade; // Calificación
             Applicant applicant; // cache del applicant encontrado
         }
         List<RowData> rows = new ArrayList<>();
@@ -122,7 +123,12 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                     rd.comentario = row.getCell(4, MissingCellPolicy.CREATE_NULL_AS_BLANK).getStringCellValue().trim();
 
                     Cell scoreCell = row.getCell(5, MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                    rd.rawScore = scoreCell.getCellType() == CellType.NUMERIC ? scoreCell.getNumericCellValue() : null;
+                    //rd.rawScore = scoreCell.getCellType() == CellType.NUMERIC ? scoreCell.getNumericCellValue() : null;
+                    rd.rawScore = parseNumericCell(scoreCell, rd.rowNum, errors);
+
+                    // Calificación: columna índice 6
+                    Cell gradeCell = row.getCell(6, MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    rd.rawFinalGrade = parseNumericCell(gradeCell, rd.rowNum, errors);
 
                     rd.applicant = applicantRepo.findByCurp(rd.curp).orElse(null);
                     if (rd.applicant == null) {
@@ -182,6 +188,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                             && "LICENCIATURA EN MEDICINA".equalsIgnoreCase(applicant.getCareer()))
                                     ? BigDecimal.valueOf(rd.rawScore)
                                     : null;
+                    BigDecimal newFinalGrade = rd.rawFinalGrade != null ? BigDecimal.valueOf(rd.rawFinalGrade) : null;
 
                     if (optPrev.isPresent()) {
                         AdmissionResult prev = optPrev.get();
@@ -189,21 +196,23 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                         boolean sameStatus = Objects.equals(prev.getStatus(), newStatus);
                         boolean sameComment = Objects.equals(prev.getComment(), newComment);
                         boolean sameScore = Objects.equals(prev.getScore(), newScore);
-                        
-                        boolean sameCareer = Objects.equals(applicant.getCareer(), applicant.getCareer());
+
+                        boolean sameCareer = Objects.equals(applicant.getCareer(),
+                        applicant.getCareer());
                         boolean sameCurp = Objects.equals(applicant.getCurp(), rd.curp);
                         boolean sameName = Objects.equals(applicant.getUser().getFullName(),
-                                applicant.getUser().getFullName());
+                        applicant.getUser().getFullName());
 
-                        if (sameCurp && sameName && sameCareer && sameStatus && sameComment && sameScore) {
-                            // No hay cambios -> no hacemos nada
-                            continue;
+                         if (sameCurp && sameName && sameCareer && sameStatus && sameComment &&
+                        sameScore) {
+                        // No hay cambios -> no hacemos nada
+                        continue;
                         } else {
                             // Hay cambios -> actualizamos el registro existente
                             prev.setStatus(newStatus);
                             prev.setComment(newComment);
                             prev.setScore(newScore);
-
+                            prev.setFinalGrade(newFinalGrade);
                             // opcional: actualizar o no el snapshot según tu política
                             prev.setCareerAtResult(applicant.getCareer());
                             prev.setAdmissionYear(year);
@@ -217,6 +226,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                         ar.setStatus(newStatus);
                         ar.setComment(newComment);
                         ar.setScore(newScore);
+                        ar.setFinalGrade(newFinalGrade);
                         ar.setCareerAtResult(applicant.getCareer());
                         ar.setAdmissionYear(year);
                         resultRepo.save(ar);
@@ -291,6 +301,22 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
         return resp;
     }
 
+    private Double parseNumericCell(Cell c, int rowNum, List<ExcelUploadResponse.ExcelError> errors) {
+        try {
+            if (c == null)
+                return null;
+            if (c.getCellType() == CellType.NUMERIC)
+                return c.getNumericCellValue();
+            String s = c.getStringCellValue();
+            if (s == null || s.isBlank())
+                return null;
+            return Double.parseDouble(s.trim());
+        } catch (Exception ex) {
+            errors.add(new ExcelUploadResponse.ExcelError(rowNum, "Formato numérico inválido: " + ex.getMessage()));
+            return null;
+        }
+    }
+
     @Override
     public List<AdmissionResultDTO> getAllResults() {
         return resultRepo.findAll().stream().map(ar -> {
@@ -304,6 +330,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
             dto.setStatus(ar.getStatus());
             dto.setComment(ar.getComment());
             dto.setScore(ar.getScore());
+            dto.setFinalGrade(ar.getFinalGrade());
             dto.setAdmissionYear(ar.getAdmissionYear());
             dto.setCreatedAt(ar.getCreatedAt());
             dto.setLastLogin(ar.getApplicant().getUser().getLastLogin());

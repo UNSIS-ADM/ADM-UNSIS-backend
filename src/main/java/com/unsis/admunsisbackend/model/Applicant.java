@@ -1,6 +1,8 @@
 package com.unsis.admunsisbackend.model;
 
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Year;
 
@@ -41,6 +43,8 @@ public class Applicant {
     private LocalDateTime examDate;
 
     private String status = "PENDING";
+
+    private BigDecimal finalGrade;
 
     @Column(name = "attendance_status", length = 10)
     private String AttendanceStatus; // "ASISTIO" | "NP"
@@ -122,6 +126,14 @@ public class Applicant {
 
     public void setExamDate(LocalDateTime examDate) {
         this.examDate = examDate;
+    }
+
+    public BigDecimal getFinalGrade() {
+        return finalGrade;
+    }
+
+    public void setFinalGrade(BigDecimal finalGrade) {
+        this.finalGrade = finalGrade;
     }
 
     public String getStatus() {

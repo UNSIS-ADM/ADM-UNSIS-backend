@@ -29,6 +29,8 @@ public class ApplicantAdminUpdateDTO {
     @Size(max = 100)
     private String location;
 
+    private BigDecimal finalGrade;
+
     @Size(max = 100)
     private String examRoom;
 
@@ -134,6 +136,14 @@ public class ApplicantAdminUpdateDTO {
 
     public void setScore(BigDecimal score) {
         this.score = score;
+    }
+
+    public BigDecimal getFinalGrade() {
+        return finalGrade;
+    }
+
+    public void setFinalGrade(BigDecimal finalGrade) {
+        this.finalGrade = finalGrade;
     }
 
 }

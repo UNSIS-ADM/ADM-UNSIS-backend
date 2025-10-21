@@ -59,4 +59,11 @@ public class VacancyDTO {
         d.setAvailableSlots(v.getAvailableSlots());
         return d;
     }
+
+    public static VacancyDTO of(String career, Integer availableSlots) {
+        VacancyDTO d = new VacancyDTO();
+        d.setCareer(career);
+        d.setAvailableSlots(availableSlots);
+        return d;
+    }
 }

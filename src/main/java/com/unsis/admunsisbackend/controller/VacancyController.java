@@ -8,7 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.unsis.admunsisbackend.dto.VacancyDTO;
 import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/admin/vacancies")
@@ -17,7 +19,16 @@ public class VacancyController {
     @Autowired
     private VacancyService vacancyService;
 
-    /** Listar cupos por año (por defecto año actual) */
+    /** Endpoint para que ROLE_APPLICANT obtenga solo availableSlots por carrera */
+    @GetMapping("/available")
+    @PreAuthorize("hasAuthority('ROLE_APPLICANT')")
+    public ResponseEntity<List<VacancyDTO>> listAvailableSlots(
+            @RequestParam(required = false) Integer year) {
+        List<VacancyDTO> list = vacancyService.listAvailableSlots(year);
+        return ResponseEntity.ok(list);
+    }
+    
+
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
     public List<VacancyDTO> list(@RequestParam(required = false) Integer year) {

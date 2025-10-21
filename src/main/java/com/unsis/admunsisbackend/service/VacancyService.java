@@ -12,5 +12,8 @@ public interface VacancyService {
     VacancyDTO recalculateOne(String career, Integer year);
     Vacancy updateCuposInserted(String career, Integer admissionYear, Integer limit);
 
+    List<VacancyDTO> listAvailableSlots(Integer year);
+
+
 }
 

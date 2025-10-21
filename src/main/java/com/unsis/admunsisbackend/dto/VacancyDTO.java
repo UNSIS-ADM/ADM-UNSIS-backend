@@ -8,6 +8,8 @@ public class VacancyDTO {
     private Integer inscritosCount; // proveniente del excel / recálculo
     private Integer cuposInserted; // fijado por admin (param limit)
     private Integer availableSlots; // calculado
+    private Integer releasedCount;
+
 
     // getters/setters omitted
     public String getCareer() {
@@ -48,6 +50,14 @@ public class VacancyDTO {
 
     public void setAvailableSlots(Integer availableSlots) {
         this.availableSlots = availableSlots;
+    }
+
+    public Integer getReleasedCount() {
+        return releasedCount;
+    }
+
+    public void setReleasedCount(Integer releasedCount) {
+        this.releasedCount = releasedCount;
     }
 
     public static VacancyDTO fromEntity(Vacancy v) {

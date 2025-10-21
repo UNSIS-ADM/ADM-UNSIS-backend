@@ -49,6 +49,9 @@ public class Vacancy {
         this.updatedAt = LocalDateTime.now();
     }
 
+    @Column(name = "released_count", nullable = false)
+    private Integer releasedCount = 0;
+
     // getters & setters...
     public Integer getLimitCount() {
         return limitCount;
@@ -128,6 +131,14 @@ public class Vacancy {
 
     public void setReservedCount(Integer reservedCount) {
         this.reservedCount = reservedCount;
+    }
+
+    public Integer getReleasedCount() {
+        return releasedCount;
+    }
+
+    public void setReleasedCount(Integer releasedCount) {
+        this.releasedCount = releasedCount;
     }
 
 }

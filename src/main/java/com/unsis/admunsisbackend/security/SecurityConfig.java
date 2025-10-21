@@ -36,6 +36,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/admin/vacancies/available").hasAuthority("ROLE_APPLICANT")
+
                         // Reglas específicas primero
                         .requestMatchers("/api/admin/upload-results").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/admin/access-restriction/**").hasRole("ADMIN")

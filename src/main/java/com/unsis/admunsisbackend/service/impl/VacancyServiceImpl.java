@@ -14,7 +14,7 @@ import java.time.Year;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
+import java.util.ArrayList;
 
 @Service
 public class VacancyServiceImpl implements VacancyService {
@@ -36,6 +36,29 @@ public class VacancyServiceImpl implements VacancyService {
     
     public VacancyServiceImpl(VacancyRepository vacancyRepo) {
         this.vacancyRepo = vacancyRepo;
+    }
+
+     @Override
+    @Transactional(readOnly = true)
+    public List<VacancyDTO> listAvailableSlots(Integer year) {
+        int y = (year != null ? year : Year.now().getValue());
+        List<Vacancy> vacs = vacancyRepo.findByAdmissionYear(y);
+
+        List<VacancyDTO> result = new ArrayList<>(vacs.size());
+        for (Vacancy v : vacs) {
+            String career = v.getCareer();
+            // if availableSlots already present use it, otherwise compute from cuposInserted - inscritos
+            Integer avail = v.getAvailableSlots();
+            if (avail == null) {
+                int cupos = Optional.ofNullable(v.getCuposInserted()).orElse(0);
+                long inscritosLong = applicantRepo.countByCareerAndAdmissionYear(career, y);
+                int inscritos = safeLongToInt(inscritosLong);
+                avail = Math.max(0, cupos - inscritos);
+            }
+            result.add(VacancyDTO.of(career, avail));
+        }
+
+        return result;
     }
 
     // Normalizar minimal: trim (dejamos mayúsculas/acentos igual para respetar

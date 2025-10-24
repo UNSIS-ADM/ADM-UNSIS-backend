@@ -36,7 +36,7 @@ public class DataInitializer {
             // Crear super admin
             User superAdmin = new User();
             superAdmin.setUsername("administrador");
-            superAdmin.setPassword(passwordEncoder.encode("ADM-ASPIRANTES")); // Pass encriptada
+            superAdmin.setPassword(passwordEncoder.encode("AMD-ASPIRNTES")); // Pass encriptada
             superAdmin.setFullName("Administrador del sistema");
             superAdmin.setRoles(Collections.singleton(adminRole));
 

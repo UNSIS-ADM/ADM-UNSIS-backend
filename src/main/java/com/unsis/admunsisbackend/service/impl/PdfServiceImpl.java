@@ -113,7 +113,7 @@ public class PdfServiceImpl implements PdfService {
      */
     private void addTableHeader(PdfPTable table, String[] headers) {
         Font headerFont = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.WHITE);
-        BaseColor headerColor = new BaseColor(79, 129, 189);
+        BaseColor headerColor = new BaseColor(106, 27, 27);
 
         for (String h : headers) {
             PdfPCell headerCell = new PdfPCell(new Phrase(h, headerFont));

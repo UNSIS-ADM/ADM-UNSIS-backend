@@ -8,4 +8,3 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
     Optional<Content> findByKeyName(String keyName);
 }
 
-

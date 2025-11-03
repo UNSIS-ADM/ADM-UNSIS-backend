@@ -4,9 +4,11 @@ import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+/**
+ * Entidad que representa a los usuarios del sistema.
+ */
 @Entity
 @Table(name = "users")
 public class User {
@@ -51,7 +53,7 @@ public class User {
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
-    // Getters y Setters
+    // getters & setters...
     public Long getId() {
         return id;
     }
@@ -114,6 +116,7 @@ public class User {
         return applicant;
     }
 
+    // Cuando se asigna un applicant, también se establece la relación inversa
     public void setApplicant(Applicant applicant) {
         this.applicant = applicant;
         if (applicant != null) {

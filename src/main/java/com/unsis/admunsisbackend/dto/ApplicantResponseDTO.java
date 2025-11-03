@@ -3,8 +3,8 @@ package com.unsis.admunsisbackend.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/* Objeto de transferencia de datos para respuestas de aspirantes */
 public class ApplicantResponseDTO {
-
     private Long id;
     private Long ficha;
     private String curp;

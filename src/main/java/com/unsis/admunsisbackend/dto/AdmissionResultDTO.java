@@ -3,6 +3,7 @@ package com.unsis.admunsisbackend.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/* Objeto de transferencia de datos para resultados de admisión */
 public class AdmissionResultDTO {
     private Long id;
     private long ficha;

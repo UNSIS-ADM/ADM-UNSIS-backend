@@ -2,15 +2,15 @@ package com.unsis.admunsisbackend.dto;
 
 import java.util.Set;
 
-
+/* Objeto de transferencia de datos para la respuesta de inicio de sesión */
 public class LoginResponse {
     private String username;
     private String fullName;
     private Set<String> roles;
-    private String curp; // Puede ser null si no aplica
-    private String token; // Aquí se va a guardar el JWT
-    private String refreshToken; // refresh token
-    private long accessTokenExpiry; // epoch ms (opcional)
+    private String curp;
+    private String token;
+    private String refreshToken;
+    private long accessTokenExpiry;
 
     // Getters y setters
     public String getUsername() {

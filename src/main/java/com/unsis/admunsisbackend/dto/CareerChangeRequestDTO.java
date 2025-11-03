@@ -1,9 +1,8 @@
 package com.unsis.admunsisbackend.dto;
 
 import java.time.LocalDateTime;
-
+/* Objeto de transferencia de datos para solicitudes de cambio de carrera */
 public class CareerChangeRequestDTO {
-
     private Long id;
     private Long applicantId;
     private Long ficha;

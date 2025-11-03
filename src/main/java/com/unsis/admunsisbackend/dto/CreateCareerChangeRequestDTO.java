@@ -1,8 +1,8 @@
 
 package com.unsis.admunsisbackend.dto;
 
+/* Objeto de transferencia de datos para solicitudes de cambio de carrera */
 public class CreateCareerChangeRequestDTO {
-
     private String newCareer;
     private String requestComment;
     // getters/setters

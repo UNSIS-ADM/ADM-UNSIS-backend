@@ -1,9 +1,6 @@
 package com.unsis.admunsisbackend.dto;
 
-/**
- * Clase que representa la solicitud de inicio de sesión.
- * Contiene el nombre de usuario y la contraseña del usuario.
- */
+/* Objeto de transferencia de datos para la solicitud de inicio de sesión */
 public class LoginRequest {
     private String username;
     private String password;

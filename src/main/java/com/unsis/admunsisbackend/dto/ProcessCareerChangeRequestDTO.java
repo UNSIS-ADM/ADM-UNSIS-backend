@@ -1,6 +1,7 @@
 
 package com.unsis.admunsisbackend.dto;
 
+/* Objeto de transferencia de datos para procesar solicitudes de cambio de carrera */
 public class ProcessCareerChangeRequestDTO {
 
     private String action; // "ACEPTADO" o "RECHAZADO"

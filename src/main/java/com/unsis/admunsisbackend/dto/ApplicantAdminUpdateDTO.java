@@ -1,19 +1,17 @@
-// src/main/java/com/unsis/admunsisbackend/dto/ApplicantAdminUpdateDTO.java
 package com.unsis.admunsisbackend.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/* Objeto de transferencia de datos para actualización administrativa de aspirantes */
 public class ApplicantAdminUpdateDTO {
-    
+
     @Min(1)
     private Long ficha;
 
@@ -38,15 +36,15 @@ public class ApplicantAdminUpdateDTO {
 
     // ISO-8601 expected e.g. "2026-06-01T09:00:00"
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime examDate; //Fecha de examen para el aspirante
+    private LocalDateTime examDate; // Fecha de examen para el aspirante
 
     @Min(2000)
     private Integer admissionYear;
 
     private String careerAtResult;
 
-    @DecimalMin(value = "0", inclusive = true, message = "El score no puede ser menor que 0")
-    @DecimalMax(value = "100", inclusive = true, message = "El score no puede ser mayor que 100")
+    @DecimalMin(value = "0", inclusive = true, message = "El puntaje no puede ser menor que 0")
+    @DecimalMax(value = "100", inclusive = true, message = "El puntaje no puede ser mayor que 100")
     private BigDecimal score;
 
     // getters y setters

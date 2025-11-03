@@ -19,6 +19,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.Collections;
 
+/**
+ * Configuración de seguridad para la aplicación.
+ * Define las reglas de seguridad, los filtros y los beans necesarios para la
+ * autenticación y autorización.
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -29,6 +34,13 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    /**
+     * Configura la cadena de filtros de seguridad.
+     *
+     * @param http El objeto HttpSecurity para configurar la seguridad HTTP.
+     * @return La cadena de filtros de seguridad configurada.
+     * @throws Exception Si ocurre un error durante la configuración.
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -41,7 +53,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/vacancies/available").hasAuthority("ROLE_APPLICANT")
                         .requestMatchers("/api/admin/upload-results").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/admin/access-restriction/**").hasRole("ADMIN")
-
+                        
+                        // Reglas para manejo de resultados y cambio de carrera
                         .requestMatchers("/api/admin/results").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")
                         .requestMatchers("/api/admin/change-career/requests").hasAnyRole("ADMIN", "USER")
 
@@ -52,10 +65,13 @@ public class SecurityConfig {
                         .anyRequest().authenticated());
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterAfter(roleAccessRestrictionFilter, JwtAuthenticationFilter.class);
-
         return http.build();
     }
 
+    /**
+     * Configura la fuente de configuración CORS.
+     * @return La fuente de configuración CORS.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -75,17 +91,27 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
+        // Aplicar configuración CORS a todas las rutas
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
+    /**
+     * Configura el Administrador de autenticación.
+     * @param authConfig La configuración de autenticación.
+     * @return El AuthenticationManager configurado.
+     * @throws Exception Si ocurre un error durante la configuración.
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    // PasswordEncoder para contraseñas en la BD
+    /**
+     * Configura el PasswordEncoder para la codificación de contraseñas.
+     * @return El PasswordEncoder configurado.
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

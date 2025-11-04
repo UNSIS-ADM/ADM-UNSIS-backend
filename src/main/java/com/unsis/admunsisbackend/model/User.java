@@ -20,9 +20,7 @@ public class User {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(unique = true, nullable = false, length = 18)
-    private String curp;
-
+  
     @Column(nullable = false)
     private String password;
 
@@ -71,14 +69,6 @@ public class User {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public String getCurp() {
-        return curp;
-    }
-
-    public void setCurp(String curp) {
-        this.curp = curp;
     }
     
     // Evitar serializar contraseñas en respuestas JSON

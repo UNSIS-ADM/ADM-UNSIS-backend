@@ -11,5 +11,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Verificar existencia por username
     boolean existsByUsername(String username);
     // Verifica si el CURP ya está registrado
-    //boolean existsByCurp(String curp); 
+    //boolean existsByCurp(String curp);
+    
 }

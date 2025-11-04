@@ -4,9 +4,10 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Year;
-//import javax.persistence.Column;
-import jakarta.persistence.Column;
 
+/**
+ * Entidad que representa los resultados de admisión de los postulantes.
+ */
 @Entity
 @Table(name = "admission_results")
 public class AdmissionResult {
@@ -45,8 +46,7 @@ public class AdmissionResult {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Getters y Setters
-
+    // getters & setters...
     public Long getId() {
         return id;
     }

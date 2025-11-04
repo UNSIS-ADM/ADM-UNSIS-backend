@@ -3,6 +3,7 @@ package com.unsis.admunsisbackend.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/* Objeto de transferencia de datos para el perfil del aspirante */
 public class ApplicantProfileDTO {
     private String fullName;
     private Long ficha;

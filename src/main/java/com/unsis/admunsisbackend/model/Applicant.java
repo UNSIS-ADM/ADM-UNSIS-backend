@@ -1,11 +1,13 @@
 package com.unsis.admunsisbackend.model;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Year;
 
+/**
+ * Entidad que representa a los postulantes al proceso de admisión.
+ */
 @Entity
 @Table(name = "applicants", uniqueConstraints = {
         @UniqueConstraint(columnNames = { "ficha", "admission_year" }),
@@ -56,6 +58,7 @@ public class Applicant {
         this.admissionYear = Year.now().getValue();
     }
 
+    // getters & setters...
     public Integer getAdmissionYear() {
         return this.admissionYear;
     }

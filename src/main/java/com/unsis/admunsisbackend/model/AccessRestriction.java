@@ -5,6 +5,10 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad que representa las restricciones de acceso basadas en roles, fechas
+ * de activación y horas.
+ */
 @Entity
 @Table(name = "access_restriction")
 public class AccessRestriction {
@@ -44,7 +48,7 @@ public class AccessRestriction {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // Getters and setters (generados manualmente)
+    // getters & setters...
     public Long getId() {
         return id;
     }

@@ -3,6 +3,9 @@ package com.unsis.admunsisbackend.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad que representa las partes o secciones de un contenido.
+ */
 @Entity
 @Table(name = "content_parts", uniqueConstraints = { @UniqueConstraint(columnNames = { "content_id", "part_key" }) })
 public class ContentPart {
@@ -30,7 +33,7 @@ public class ContentPart {
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
 
-    // getters/setters
+    // getters & setters...
     public Long getId() {
         return id;
     }

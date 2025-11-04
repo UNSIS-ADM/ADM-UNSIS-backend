@@ -2,6 +2,7 @@ package com.unsis.admunsisbackend.dto;
 
 import java.util.Set;
 
+/* Objeto de transferencia de datos para la respuesta de usuario */
 public class UserResponseDTO {
     private Long id;
     private String username;

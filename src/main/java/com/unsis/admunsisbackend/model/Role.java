@@ -3,6 +3,9 @@ package com.unsis.admunsisbackend.model;
 import jakarta.persistence.*;
 import java.util.Set;
 
+/**
+ * Entidad que representa los roles de usuario en el sistema.
+ */
 @Entity
 @Table(name = "roles")
 public class Role {
@@ -20,7 +23,7 @@ public class Role {
     @ManyToMany(mappedBy = "roles")
     private Set<User> users;
 
-    // Getters y Setters
+    // getters & setters...
     public Long getId() {
         return id;
     }

@@ -1,5 +1,6 @@
 package com.unsis.admunsisbackend.dto;
 
+/* Objeto de transferencia de datos para crear restricciones de acceso */
 public class CreateRestrictionDTO {
     private String roleName;
     private int startDay;

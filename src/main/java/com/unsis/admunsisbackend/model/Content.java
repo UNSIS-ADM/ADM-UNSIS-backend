@@ -2,8 +2,10 @@ package com.unsis.admunsisbackend.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 
+/**
+ * Entidad que representa contenidos estáticos o dinámicos del sistema.
+ */
 @Entity
 @Table(name = "contents")
 public class Content {
@@ -20,20 +22,49 @@ public class Content {
 
     private boolean active = true;
 
-    @Column(name="created_at", insertable = false, updatable = false)
+    @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
-    @Column(name="updated_at", insertable = false, updatable = false)
+    @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
 
-    // getters / setters
-    public Long getId(){return id;}
-    public void setId(Long id){this.id=id;}
-    public String getKeyName(){return keyName;}
-    public void setKeyName(String keyName){this.keyName=keyName;}
-    public String getTitle(){return title;}
-    public void setTitle(String title){this.title=title;}
-    public String getLanguage(){return language;}
-    public void setLanguage(String language){this.language=language;}
-    public boolean isActive(){return active;}
-    public void setActive(boolean active){this.active=active;}
+    // getters & setters...
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getKeyName() {
+        return keyName;
+    }
+
+    public void setKeyName(String keyName) {
+        this.keyName = keyName;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 }

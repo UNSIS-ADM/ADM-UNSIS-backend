@@ -10,6 +10,10 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+/**
+ * Proveedor de tokens JWT que maneja la generación, validación y extracción de
+ * información de los tokens JWT.
+ */
 @Component
 public class JwtTokenProvider {
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
@@ -25,6 +29,12 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    /**
+     * Genera un token JWT para el usuario especificado.
+     *
+     * @param username El nombre de usuario del usuario.
+     * @return El token JWT generado.
+     */
     public String generateToken(String username) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
@@ -40,6 +50,12 @@ public class JwtTokenProvider {
         return token;
     }
 
+    /**
+     * Extrae el nombre de usuario del token JWT.
+     *
+     * @param token El token JWT.
+     * @return El nombre de usuario extraído del token.
+     */
     public String getUsernameFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -52,12 +68,18 @@ public class JwtTokenProvider {
         return username;
     }
 
+    /**
+     * Valida el token JWT.
+     *
+     * @param token El token JWT a validar.
+     * @return true si el token es válido, false en caso contrario.
+     */
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token);
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token);
             logger.info("Token JWT validado exitosamente");
             return true;
         } catch (SecurityException ex) {
@@ -73,8 +95,13 @@ public class JwtTokenProvider {
         }
         return false;
     }
-
-    // Refresh token de sesión
+    
+    /**
+     * Extrae todos los claims (información contenida dentro de JWT) del token JWT.
+     *
+     * @param token El token JWT.
+     * @return Los claims extraídos del token.
+     */
     public Claims getAllClaimsFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -83,6 +110,11 @@ public class JwtTokenProvider {
                 .getBody(); // esto lanzará ExpiredJwtException si expiró
     }
 
+    /**
+     * Obtiene el tiempo de expiración del token JWT en milisegundos.
+     * 
+     * @return El tiempo de expiración en milisegundos.
+     */
     public int getJwtExpirationInMs() {
         return jwtExpirationInMs;
     }

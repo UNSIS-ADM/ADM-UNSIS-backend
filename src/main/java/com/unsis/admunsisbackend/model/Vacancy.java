@@ -3,6 +3,10 @@ package com.unsis.admunsisbackend.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad que representa las vacantes disponibles para cada carrera y año de
+ * admisión.
+ */
 @Entity
 @Table(name = "vacancies", uniqueConstraints = @UniqueConstraint(name = "ux_career_year", columnNames = { "career",
         "admission_year" }))
@@ -34,7 +38,7 @@ public class Vacancy {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
+
     @Column(name = "limit_count")
     private Integer limitCount = 0;
 
@@ -109,7 +113,7 @@ public class Vacancy {
         this.availableSlots = availableSlots;
     }
 
-    public LocalDateTime getCreatedAt() {  
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 

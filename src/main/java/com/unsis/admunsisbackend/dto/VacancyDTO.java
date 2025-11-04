@@ -2,14 +2,14 @@ package com.unsis.admunsisbackend.dto;
 
 import com.unsis.admunsisbackend.model.Vacancy;
 
+/* Objeto de transferencia de datos para vacantes */
 public class VacancyDTO {
     private String career;
     private Integer admissionYear;
-    private Integer inscritosCount; // proveniente del excel / recálculo
-    private Integer cuposInserted; // fijado por admin (param limit)
-    private Integer availableSlots; // calculado
+    private Integer inscritosCount;
+    private Integer cuposInserted;
+    private Integer availableSlots;
     private Integer releasedCount;
-
 
     // getters/setters omitted
     public String getCareer() {

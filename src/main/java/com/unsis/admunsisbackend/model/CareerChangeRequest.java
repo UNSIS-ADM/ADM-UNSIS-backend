@@ -3,6 +3,9 @@ package com.unsis.admunsisbackend.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad que representa las solicitudes de cambio de carrera de los postulantes.
+ */
 @Entity
 @Table(name = "career_change_requests")
 public class CareerChangeRequest {
@@ -24,23 +27,23 @@ public class CareerChangeRequest {
     private String newCareer;
 
     @Column(nullable = false)
-    private String status;              // PENDING, APPROVED, DENIED
+    private String status; // PENDING, APPROVED, DENIED
 
     @Column(name = "request_comment")
-    private String requestComment;      // Comentario del aspirante
+    private String requestComment;
 
     @Column(name = "response_comment")
-    private String responseComment;     // Comentario del admin/secretaria
+    private String responseComment;
 
     @Column(name = "requested_at", updatable = false)
-    private LocalDateTime requestedAt;  // Fecha de solicitud
+    private LocalDateTime requestedAt;
 
     @Column(name = "processed_at")
-    private LocalDateTime processedAt;  // Fecha de aprobación/rechazo
+    private LocalDateTime processedAt;
 
     @ManyToOne
     @JoinColumn(name = "processed_by")
-    private User processedBy;           //Quien prcesó, aprobó/rechazó
+    private User processedBy;
 
     @PrePersist
     protected void onCreate() {

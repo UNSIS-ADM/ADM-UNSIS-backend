@@ -1,10 +1,11 @@
 package com.unsis.admunsisbackend.dto;
 
+/* Objeto de transferencia de datos para restricciones de acceso */
 public class AccessRestrictionDTO {
     private Long id;
     private String roleName;
-    private String activationDate; 
-    private String activationTime; 
+    private String activationDate;
+    private String activationTime;
     private boolean enabled;
     private String description;
 
@@ -40,7 +41,7 @@ public class AccessRestrictionDTO {
     public void setActivationTime(String activationTime) {
         this.activationTime = activationTime;
     }
-    
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -57,4 +58,3 @@ public class AccessRestrictionDTO {
         this.description = description;
     }
 }
-

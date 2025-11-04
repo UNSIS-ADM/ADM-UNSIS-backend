@@ -2,6 +2,7 @@ package com.unsis.admunsisbackend.dto;
 
 import java.util.List;
 
+/* Objeto de transferencia de datos para la respuesta de carga de Excel */
 public class ExcelUploadResponse {
     private boolean success;
     private String message;

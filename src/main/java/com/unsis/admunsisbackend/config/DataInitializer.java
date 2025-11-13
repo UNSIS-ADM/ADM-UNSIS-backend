@@ -8,12 +8,13 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import java.util.Collections;
 
+// Clase para inicializar datos al arrancar la aplicación
 @Configuration
 public class DataInitializer {
 
+    // Crear un super admin si no existe
     @Bean
     CommandLineRunner initSuperAdmin(UserRepository userRepository,
             RoleRepository roleRepository,
@@ -23,8 +24,9 @@ public class DataInitializer {
                 System.out.println("ℹSuper Admin ya existe, no se creó de nuevo.");
                 return;
             }
+            
 
-            // Asegurar que exista el rol ROLE_ADMIN
+            // Crear rol ADMIN si no existe
             Role adminRole = roleRepository.findByName("ROLE_ADMIN")
                     .orElseGet(() -> {
                         Role role = new Role();
@@ -33,16 +35,18 @@ public class DataInitializer {
                         return roleRepository.save(role);
                     });
 
-            // Crear super admin
+            // Crear super admin si no existe
             User superAdmin = new User();
             superAdmin.setUsername("administrador");
             superAdmin.setPassword(passwordEncoder.encode("ADM-ASPIRANTES")); // Pass encriptada
             superAdmin.setFullName("Administrador del sistema");
             superAdmin.setRoles(Collections.singleton(adminRole));
 
+            // Guardar super admin en la base de datos
             userRepository.save(superAdmin);
-
-            System.out.println("Super Admin creado exitosamente.");
+            
+            // Confirmar creación exitosa por consola
+            // System.out.println("Super Admin creado exitosamente.");
         };
     }
 }

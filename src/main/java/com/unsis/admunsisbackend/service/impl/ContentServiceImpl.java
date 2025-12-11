@@ -28,6 +28,13 @@ public class ContentServiceImpl implements ContentService {
                     "contact"),
             "mensaje_reprobado_2025", List.of("header", "body", "suggested_programs", "deadline_note", "contact"));
 
+    // Crear una constante para el Safelist configurado
+    private static final Safelist HTML_SAFELIST = Safelist.relaxed()
+            .addTags("span")
+            .addAttributes(":all", "style")  // Permite style en todos los elementos
+            .addAttributes(":all", "class")  // Permite class en todos los elementos
+            .preserveRelativeLinks(true);    // Mantiene links relativos
+
     public ContentServiceImpl(ContentRepository contentRepo, ContentPartRepository partRepo) {
         this.contentRepo = contentRepo;
         this.partRepo = partRepo;
@@ -114,8 +121,7 @@ public class ContentServiceImpl implements ContentService {
         ContentPart part = parts.stream().filter(p -> p.getPartKey().equals(partKey)).findFirst()
                 .orElseThrow(() -> new RuntimeException("Parte no encontrada: " + partKey));
 
-        String cleaned = Jsoup.clean(dto.getHtmlContent(),
-                Safelist.relaxed().addTags("span").addAttributes("span", "class", "style"));
+        String cleaned = Jsoup.clean(dto.getHtmlContent(), HTML_SAFELIST);
         part.setTitle(dto.getTitle());
         part.setHtmlContent(cleaned);
         part.setOrderIndex(dto.getOrderIndex() != null ? dto.getOrderIndex() : part.getOrderIndex());
@@ -144,8 +150,7 @@ public class ContentServiceImpl implements ContentService {
             ContentPart p = byKey.get(pd.getPartKey());
             if (p == null)
                 continue;
-            String cleaned = Jsoup.clean(pd.getHtmlContent(),
-                    Safelist.relaxed().addTags("span").addAttributes("span", "class", "style"));
+            String cleaned = Jsoup.clean(pd.getHtmlContent(), HTML_SAFELIST);
             p.setTitle(pd.getTitle());
             p.setHtmlContent(cleaned);
             p.setOrderIndex(pd.getOrderIndex() != null ? pd.getOrderIndex() : p.getOrderIndex());

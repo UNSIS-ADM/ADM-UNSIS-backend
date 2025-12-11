@@ -106,7 +106,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                 }
             }
 
-            // Primera pasada: leer filas, cachear applicants y contadores por carrera
+            //Primera pasada: leer filas, cachear applicants y contadores por carrera
             Iterator<Row> it = sheet.rowIterator();
             it.next(); // saltar header
 

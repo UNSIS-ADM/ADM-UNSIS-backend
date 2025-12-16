@@ -14,11 +14,13 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.unsis.admunsisbackend.dto.AdminUserUpdateDTO;
+import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.stream.Collectors;
 import java.util.Optional;
 import java.util.List;
 import java.util.Set;
+
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -149,4 +151,90 @@ public class UserServiceImpl implements UserService {
             userRepository.save(user);
         }
     }
+
+    @Override
+    @Transactional
+    public UserResponseDTO adminCreateOrUpdateUser(AdminUserUpdateDTO dto) {
+        if (dto == null) throw new IllegalArgumentException("DTO es null");
+
+        User user;
+        boolean creating = (dto.getId() == null);
+
+        if (creating) {
+            // crear nuevo usuario: validar username no exista
+            if (dto.getUsername() == null || dto.getUsername().isBlank()) {
+                throw new RuntimeException("username requerido para crear usuario");
+            }
+            if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
+                throw new RuntimeException("Ya existe un usuario con username=" + dto.getUsername());
+            }
+            user = new User();
+        } else {
+            user = userRepository.findById(dto.getId())
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id=" + dto.getId()));
+        }
+
+        // VALIDACIÓN de cambio de username (si viene y es distinto)
+        if (dto.getUsername() != null && !dto.getUsername().isBlank()) {
+            if (!dto.getUsername().equals(user.getUsername())) {
+                // verificar que no exista otro con ese username
+                Optional<User> byUsername = userRepository.findByUsername(dto.getUsername());
+                if (byUsername.isPresent() && !byUsername.get().getId().equals(user.getId())) {
+                    throw new RuntimeException("El username " + dto.getUsername() + " ya está en uso por otro usuario.");
+                }
+                user.setUsername(dto.getUsername());
+            }
+        }
+
+        // fullName (si viene)
+        if (dto.getFullName() != null) {
+            user.setFullName(dto.getFullName());
+        }
+
+        // password: si viene y no está vacío => encriptar y actualizar
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
+
+        // active: si viene (habilitar/deshabilitar)
+        if (dto.getActive() != null) {
+            // evitar que un admin se desactive a sí mismo (precaución)
+            String currentUsername = SecurityContextHolder.getContext().getAuthentication() != null
+                    ? SecurityContextHolder.getContext().getAuthentication().getName()
+                    : null;
+            if (currentUsername != null && currentUsername.equals(user.getUsername()) && !dto.getActive()) {
+                throw new RuntimeException("No puede desactivar su propia cuenta de administrador.");
+            }
+            user.setActive(dto.getActive());
+        }
+
+        // roles: si vienen, mapear a entidades Role
+        if (dto.getRoles() != null && !dto.getRoles().isEmpty()) {
+            Set<Role> roles = dto.getRoles().stream()
+                    .map(roleName -> roleRepository.findByName(roleName)
+                            .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + roleName)))
+                    .collect(Collectors.toSet());
+            user.setRoles(roles);
+        }
+
+        // Si era creación, asegurarnos campos mínimos
+        if (creating) {
+            // si no mandaron password, le ponemos un password temporal (recomendable: requerir password)
+            if (user.getPassword() == null) {
+                user.setPassword(passwordEncoder.encode("changeme"));
+            }
+            if (user.getFullName() == null) user.setFullName(user.getUsername());
+            if (user.getActive() == null) user.setActive(true);
+            // si no mandaron roles, asignar ROLE_USER por defecto
+            if (user.getRoles() == null || user.getRoles().isEmpty()) {
+                Role defaultRole = roleRepository.findByName("ROLE_USER")
+                        .orElseThrow(() -> new RuntimeException("Rol ROLE_USER no existe"));
+                user.setRoles(Set.of(defaultRole));
+            }
+        }
+
+        User saved = userRepository.save(user);
+        return convertToDTO(saved);
+    }
+
 }

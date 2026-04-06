@@ -73,7 +73,7 @@ public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.setAllowedOrigins(Arrays.asList(
         "http://localhost:4200",  // Angular dev server
-        "http://frontend"         // Contenedor Docker del frontend
+        "http://132.18.44.252"         // Contenedor Docker del frontend
     ));
     configuration.setAllowCredentials(true); // permite enviar cookies / Authorization header
     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));

@@ -1,21 +1,16 @@
-# Etapa 1: Compilar JAR
-FROM gradle:8.4-jdk21 AS build
-WORKDIR /app
-COPY . .
+# Dockerfile para backend Spring Boot (usando JAR precompilado)
 
-# Permisos al wrapper
-RUN chmod +x gradlew
-
-# Compilar con el wrapper
-RUN ./gradlew --no-daemon clean build --refresh-dependencies
-
-
-# Etapa 2: Imagen final para correr la app
+# Imagen base con JDK 21
 FROM eclipse-temurin:21-jdk
+
+# Carpeta de trabajo dentro del contenedor
 WORKDIR /app
 
-COPY --from=build /app/build/libs/*.jar app.jar
+# Copiamos el JAR compilado desde tu laptop al contenedor
+COPY build/libs/*.jar app.jar
 
+# Exponemos el puerto que tu aplicación usa
 EXPOSE 1200
 
+# Comando para ejecutar la aplicación
 ENTRYPOINT ["java", "-jar", "app.jar"]

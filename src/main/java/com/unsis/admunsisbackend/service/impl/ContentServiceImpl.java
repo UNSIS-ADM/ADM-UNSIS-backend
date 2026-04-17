@@ -23,10 +23,10 @@ public class ContentServiceImpl implements ContentService {
 
     // define las keys permitidas y sus partes (inmutables)
     private static final Map<String, List<String>> ALLOWED_PART_KEYS_BY_CONTENT = Map.of(
-            "mensaje_aceptado_2025",
+            "mensaje_aceptado",
             List.of("greeting", "welcome_note", "inscription_dates", "survey", "documents_list", "note", "start_date",
                     "contact"),
-            "mensaje_reprobado_2025", List.of("header", "body", "suggested_programs", "deadline_note", "contact"));
+            "mensaje_reprobado", List.of("header", "body", "suggested_programs", "deadline_note", "contact"));
 
     // Crear una constante para el Safelist configurado
     private static final Safelist HTML_SAFELIST = Safelist.relaxed()

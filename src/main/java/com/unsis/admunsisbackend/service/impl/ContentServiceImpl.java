@@ -4,13 +4,18 @@ import com.unsis.admunsisbackend.dto.ContentDTO;
 import com.unsis.admunsisbackend.dto.ContentPartDTO;
 import com.unsis.admunsisbackend.model.Content;
 import com.unsis.admunsisbackend.model.ContentPart;
+import com.unsis.admunsisbackend.model.Vacancy;
 import com.unsis.admunsisbackend.repository.ContentPartRepository;
 import com.unsis.admunsisbackend.repository.ContentRepository;
+import com.unsis.admunsisbackend.repository.VacancyRepository;
 import com.unsis.admunsisbackend.service.ContentService;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.unsis.admunsisbackend.repository.UserRepository;
+import com.unsis.admunsisbackend.model.User;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,6 +25,8 @@ public class ContentServiceImpl implements ContentService {
 
     private final ContentRepository contentRepo;
     private final ContentPartRepository partRepo;
+    private final VacancyRepository vacancyRepo;
+    private final UserRepository userRepository;
 
     // define las keys permitidas y sus partes (inmutables)
     private static final Map<String, List<String>> ALLOWED_PART_KEYS_BY_CONTENT = Map.of(
@@ -35,9 +42,16 @@ public class ContentServiceImpl implements ContentService {
             .addAttributes(":all", "class")  // Permite class en todos los elementos
             .preserveRelativeLinks(true);    // Mantiene links relativos
 
-    public ContentServiceImpl(ContentRepository contentRepo, ContentPartRepository partRepo) {
+    public ContentServiceImpl(
+            ContentRepository contentRepo,
+            ContentPartRepository partRepo,
+            VacancyRepository vacancyRepo,
+            UserRepository userRepository) {
+
         this.contentRepo = contentRepo;
         this.partRepo = partRepo;
+        this.vacancyRepo = vacancyRepo;
+        this.userRepository = userRepository;
     }
 
     private ContentPartDTO partToDto(ContentPart p) {
@@ -61,6 +75,32 @@ public class ContentServiceImpl implements ContentService {
         return d;
     }
 
+    private String buildCareersListHtml(int year, String carreraAspirante) {
+        List<Vacancy> vacs = vacancyRepo.findByAdmissionYear(year);
+
+        return "<ul class=\"list-disc list-inside ml-4\">" +
+                vacs.stream()
+                        .filter(v -> v.getAvailableSlots() > 0)
+                        .filter(v -> !v.getCareer().equalsIgnoreCase("LICENCIATURA EN MEDICINA"))
+                        .filter(v -> !v.getCareer().equalsIgnoreCase(carreraAspirante)) // 🔥 excluir la suya
+                        .map(v -> "<li>" + v.getCareer() + "</li>")
+                        .collect(Collectors.joining())
+                + "</ul>";
+    }
+
+    /*
+    private String buildCareersListHtml(int year) {
+        List<Vacancy> vacs = vacancyRepo.findByAdmissionYear(year);
+
+        return "<ul class=\"list-disc list-inside ml-4\">" +
+                vacs.stream()
+                        .filter(v -> v.getAvailableSlots() > 0)
+                        .filter(v -> !v.getCareer().equalsIgnoreCase("LICENCIATURA EN MEDICINA")) // 🔥 AQUÍ
+                        .map(v -> "<li>" + v.getCareer() + "</li>")
+                        .collect(Collectors.joining())
+                + "</ul>";
+    }*/
+/*
     @Override
     @Transactional(readOnly = true)
     public ContentDTO getByKey(String keyName) {
@@ -70,6 +110,58 @@ public class ContentServiceImpl implements ContentService {
                 .orElseThrow(() -> new RuntimeException("Content no encontrado: " + keyName));
         return toDto(c, parts);
     }
+*/
+
+@Override
+@Transactional(readOnly = true)
+public ContentDTO getByKey(String keyName) {
+
+    final String key = keyName.toLowerCase();
+
+    List<ContentPart> parts = ensureAndGetPartsForContentKey(key);
+
+    Content c = contentRepo.findByKeyName(key)
+            .orElseThrow(() -> new RuntimeException("Content no encontrado: " + key));
+
+    // 🔥 OBTENER CARRERA DEL USUARIO LOGUEADO
+    String carreraAspirante = obtenerCarreraDelUsuario();
+
+    // 🔥 GENERAR LISTA DINÁMICA
+    int year = Calendar.getInstance().get(Calendar.YEAR);
+    String careersHtml = buildCareersListHtml(year, carreraAspirante);
+
+    // 🔥 REEMPLAZAR PLACEHOLDER
+    for (ContentPart p : parts) {
+        if (p.getHtmlContent() != null &&
+                p.getHtmlContent().contains("%CARRERAS_LIST%")) {
+
+            p.setHtmlContent(
+                    p.getHtmlContent().replace("%CARRERAS_LIST%", careersHtml));
+        }
+    }
+
+    return toDto(c, parts);
+}
+
+
+private String obtenerCarreraDelUsuario() {
+    var auth = SecurityContextHolder.getContext().getAuthentication();
+
+    if (auth == null || !auth.isAuthenticated()) {
+        throw new RuntimeException("Usuario no autenticado");
+    }
+
+    String username = auth.getName(); // 👈 este es el username (ficha)
+
+    User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+    if (user.getApplicant() == null) {
+        throw new RuntimeException("El usuario no es aspirante");
+    }
+
+    return user.getApplicant().getCareer(); // 👈 AQUÍ debe estar la carrera
+}
 
     @Transactional
     private List<ContentPart> ensureAndGetPartsForContentKey(String keyName) {
@@ -166,4 +258,5 @@ public class ContentServiceImpl implements ContentService {
             return toDto(c, parts);
         }).collect(Collectors.toList());
     }
+
 }

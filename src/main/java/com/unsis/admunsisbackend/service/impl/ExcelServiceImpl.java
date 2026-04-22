@@ -45,7 +45,8 @@ public class ExcelServiceImpl implements ExcelService {
             "LICENCIATURA EN INFORMÁTICA",
             "LICENCIATURA EN MEDICINA",
             "LICENCIATURA EN NUTRICIÓN",
-            "LICENCIATURA EN ODONTOLOGÍA");
+            "LICENCIATURA EN ODONTOLOGÍA",
+            "LICENCIATURA EN GOBIERNO Y DESARROLLO MUNICIPAL");
 
     private static final String[] EXPECTED_HEADERS = {
             "Número Ficha",

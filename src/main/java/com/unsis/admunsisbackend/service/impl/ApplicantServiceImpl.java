@@ -266,12 +266,12 @@ public ApplicantResponseDTO markAttendance(Long applicantId, String status, Stri
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aspirante no encontrado"));
 
     if (status == null) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status requerido: ASISTIÓ o NP");
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status requerido: ASISTIÓ o NP o PENDIENTE");
     }
 
     String s = status.trim().toUpperCase();
-    if (!s.equals("ASISTIÓ") && !s.equals("NP")) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status inválido. Usar ASISTIÓ o NP");
+    if (!s.equals("ASISTIÓ") && !s.equals("NP")&& !s.equals("PENDIENTE")) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status inválido. Usar ASISTIÓ o NP o PENDIENTE");
     }
 
     a.setAttendanceStatus(s);

@@ -82,29 +82,48 @@ public Page<ApplicantResponseDTO> getAllApplicants(Integer year, int page, int s
     return applicants.map(this::toDto);
 }
 
-    @Override
-    public List<ApplicantResponseDTO> searchApplicants(
-            Long ficha,
-            String curp,
-            String career,
-            String fullName) {
+  @Override
+public List<ApplicantResponseDTO> searchApplicants(
+        Long ficha,
+        String curp,
+        String career,
+        String fullName) {
 
-        List<Applicant> results;
+    List<Applicant> results = new java.util.ArrayList<>();
 
-        if (ficha != null) {
-            results = applicantRepo.findByFicha(ficha).map(List::of).orElse(List.of());
-        } else if (curp != null && !curp.isBlank()) {
-            results = applicantRepo.findByCurpContainingIgnoreCase(curp);
-        } else if (career != null && !career.isBlank()) {
-            results = applicantRepo.findByCareerContainingIgnoreCase(career);
-        } else if (fullName != null && !fullName.isBlank()) {
-            results = applicantRepo.findByUser_FullNameContainingIgnoreCase(fullName);
-        } else {
-            results = applicantRepo.findAll();
-        }
-
-        return results.stream().map(this::toDto).collect(Collectors.toList());
+    // Buscar por ficha
+    if (ficha != null) {
+        applicantRepo.findByFicha(ficha)
+                .ifPresent(results::add);
     }
+
+    // Buscar por CURP
+    if (curp != null && !curp.isBlank()) {
+        results.addAll(
+                applicantRepo.findByCurpContainingIgnoreCase(curp));
+    }
+
+    // Buscar por carrera
+    if (career != null && !career.isBlank()) {
+        results.addAll(
+                applicantRepo.findByCareerContainingIgnoreCase(career));
+    }
+
+    // Buscar por nombre
+    if (fullName != null && !fullName.isBlank()) {
+        results.addAll(
+                applicantRepo.findByUser_FullNameContainingIgnoreCase(fullName));
+    }
+
+    // Eliminar duplicados
+    results = results.stream()
+            .distinct()
+            .collect(Collectors.toList());
+
+    return results.stream()
+            .map(this::toDto)
+            .collect(Collectors.toList());
+}
 
     @Override
     @Transactional

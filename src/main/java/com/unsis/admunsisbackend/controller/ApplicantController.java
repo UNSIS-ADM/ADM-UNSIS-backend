@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
@@ -19,14 +20,24 @@ public class ApplicantController {
     private ApplicantService service;
     
 
-
+/*
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
     public ResponseEntity<List<ApplicantResponseDTO>> getAll(
         @RequestParam(value = "year", required = false) Integer year) {
         return ResponseEntity.ok(service.getAllApplicants(year));
-    }
+    }*/
 
+    @GetMapping
+@PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
+public ResponseEntity<Page<ApplicantResponseDTO>> getAll(
+        @RequestParam(value = "year", required = false) Integer year,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
+
+    return ResponseEntity.ok(
+            service.getAllApplicants(year, page, size));
+}
     @GetMapping("/search")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
     public ResponseEntity<List<ApplicantResponseDTO>> search(

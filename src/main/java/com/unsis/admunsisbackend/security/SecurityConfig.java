@@ -17,102 +17,66 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
-import java.util.Collections;
 
-/**
- * Configuración de seguridad para la aplicación.
- * Define las reglas de seguridad, los filtros y los beans necesarios para la
- * autenticación y autorización.
- */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
     @Autowired
     private RoleAccessRestrictionFilter roleAccessRestrictionFilter;
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    /**
-     * Configura la cadena de filtros de seguridad.
-     *
-     * @param http El objeto HttpSecurity para configurar la seguridad HTTP.
-     * @return La cadena de filtros de seguridad configurada.
-     * @throws Exception Si ocurre un error durante la configuración.
-     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())// Desactivar CSRF para pruebas con Postman
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-
-                        // Reglas específicas primero
+                        // Reglas de acceso
+                        .requestMatchers("/api/content/**").hasAnyAuthority("ROLE_APPLICANT", "ROLE_ADMIN", "ROLE_USER")
                         .requestMatchers("/api/admin/vacancies/available").hasAuthority("ROLE_APPLICANT")
                         .requestMatchers("/api/admin/upload-results").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/admin/access-restriction/**").hasRole("ADMIN")
-                        
-                        // Reglas para manejo de resultados y cambio de carrera
                         .requestMatchers("/api/admin/results").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")
                         .requestMatchers("/api/admin/change-career/requests").hasAnyRole("ADMIN", "USER")
-
-                        // Regla general después, más permisiva si corresponde
                         .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")
                         .requestMatchers("/api/user/**").hasAuthority("ROLE_USER")
                         .requestMatchers("/api/applicant/**").hasAuthority("ROLE_APPLICANT")
                         .anyRequest().authenticated());
+
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterAfter(roleAccessRestrictionFilter, JwtAuthenticationFilter.class);
+        
         return http.build();
     }
 
-   @Bean
-public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(Arrays.asList(
-        "http://localhost:4200",  // Angular dev server
-        "http://132.18.44.252"         // Contenedor Docker del frontend
-    ));
-    configuration.setAllowCredentials(true); // permite enviar cookies / Authorization header
-    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    configuration.setAllowedHeaders(Arrays.asList(
-        "Authorization",
-        "Content-Type",
-        "X-Requested-With",
-        "Accept",
-        "Origin",
-        "Access-Control-Request-Method",
-        "Access-Control-Request-Headers"
-    ));
-    configuration.setExposedHeaders(Arrays.asList(
-        "Authorization",  // tu JWT puede ir aquí si lo devuelves en headers
-        "Access-Control-Allow-Origin",
-        "Access-Control-Allow-Credentials"
-    ));
-    configuration.setMaxAge(3600L);
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        
+        // Permite cualquier origen (IP y puerto) dinámicamente
+        configuration.addAllowedOriginPattern("*");
+        
+        configuration.setAllowCredentials(true);
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*")); // Permite todos los encabezados
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"));
+        configuration.setMaxAge(3600L);
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration);
-    return source;
-}
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 
-    /**
-     * Configura el Administrador de autenticación.
-     * @param authConfig La configuración de autenticación.
-     * @return El AuthenticationManager configurado.
-     * @throws Exception Si ocurre un error durante la configuración.
-     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    /**
-     * Configura el PasswordEncoder para la codificación de contraseñas.
-     * @return El PasswordEncoder configurado.
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

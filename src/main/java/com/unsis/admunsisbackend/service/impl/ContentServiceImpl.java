@@ -27,20 +27,16 @@ public class ContentServiceImpl implements ContentService {
     private final VacancyRepository vacancyRepo;
     private final UserRepository userRepository;
 
-    //Keys permitidas y sus partes (inmutables)
+    // 1. LLAVES EN MINÚSCULAS para coincidir con la normalización
     private static final Map<String, List<String>> ALLOWED_PART_KEYS_BY_CONTENT = Map.of(
-            "mensaje_aceptado",
-            List.of("greeting", "welcome_note", "inscription_dates", "survey", "documents_list", "note", "start_date",
-                    "contact"),
-            "mensaje_reprobado",
-            List.of("header", "body", "suggested_programs", "deadline_note", "contact", "suneo_options"));
+            "mensaje_aceptado", List.of("greeting", "welcome_note", "inscription_dates", "survey", "documents_list", "note", "start_date", "contact"),
+            "mensaje_reprobado", List.of("header", "body", "suggested_programs", "deadline_note", "contact")
+    );
 
-    // Crear una constante para el Safelist configurado
     private static final Safelist HTML_SAFELIST = Safelist.relaxed()
             .addTags("span")
-            .addAttributes(":all", "style") // Permite style en todos los elementos
-            .addAttributes(":all", "class") // Permite class en todos los elementos
-            .preserveRelativeLinks(true); // Mantiene links relativos
+            .addAttributes(":all", "style", "class")
+            .preserveRelativeLinks(true);
 
     public ContentServiceImpl(
             ContentRepository contentRepo,
@@ -88,53 +84,26 @@ public class ContentServiceImpl implements ContentService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ContentDTO getByKey(String keyName) {
-        final String key = keyName.toLowerCase();
-        List<ContentPart> parts = ensureAndGetPartsForContentKey(key);
-
-        Content c = contentRepo.findByKeyName(key)
-                .orElseThrow(() -> new RuntimeException("Content no encontrado: " + key));
-
-        // Solo aplica el reemplazo si el usuario es aspirante
-        String carreraAspirante = obtenerCarreraDelUsuarioSafe();
-
-        if (carreraAspirante != null) {
-            int year = Calendar.getInstance().get(Calendar.YEAR);
-            String careersHtml = buildCareersListHtml(year, carreraAspirante);
-
-            for (ContentPart p : parts) {
-                if (p.getHtmlContent() != null &&
-                        p.getHtmlContent().contains("%CARRERAS_LIST%")) {
-                    p.setHtmlContent(
-                            p.getHtmlContent().replace("%CARRERAS_LIST%", careersHtml));
-                }
-            }
-        }
+        // 2. Normalizamos la entrada a minúsculas
+        String normalizedKey = keyName.toLowerCase(); 
+        
+        List<ContentPart> parts = ensureAndGetPartsForContentKey(normalizedKey);
+        
+        Content c = contentRepo.findByKeyName(normalizedKey)
+                .orElseThrow(() -> new RuntimeException("Content no encontrado: " + normalizedKey));
         return toDto(c, parts);
     }
 
-    private String obtenerCarreraDelUsuarioSafe() {
-        try {
-            var auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth == null || !auth.isAuthenticated())
-                return null;
-
-            String username = auth.getName();
-            User user = userRepository.findByUsername(username).orElse(null);
-            if (user == null || user.getApplicant() == null)
-                return null; // admin → null, sin excepción
-            return user.getApplicant().getCareer();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    @Transactional
     private List<ContentPart> ensureAndGetPartsForContentKey(String keyName) {
-        List<String> allowed = ALLOWED_PART_KEYS_BY_CONTENT.get(keyName);
-        if (allowed == null)
+        // Ahora keyName ya viene en minúsculas desde getByKey
+        List<String> allowedKeys = ALLOWED_PART_KEYS_BY_CONTENT.get(keyName);
+        
+        if (allowedKeys == null) {
             throw new IllegalArgumentException("Content key no permitida: " + keyName);
+        }
+
         Content content = contentRepo.findByKeyName(keyName).orElseGet(() -> {
             Content nc = new Content();
             nc.setKeyName(keyName);
@@ -143,86 +112,87 @@ public class ContentServiceImpl implements ContentService {
             return contentRepo.save(nc);
         });
 
-        List<ContentPart> existing = partRepo.findByContentIdOrderByOrderIndex(content.getId());
-        Map<String, ContentPart> byKey = existing.stream().collect(Collectors.toMap(ContentPart::getPartKey, p -> p));
+        List<ContentPart> existingParts = partRepo.findByContentIdOrderByOrderIndex(content.getId());
+        Map<String, ContentPart> existingMap = existingParts.stream()
+                .collect(Collectors.toMap(ContentPart::getPartKey, p -> p));
 
-        List<ContentPart> result = new ArrayList<>();
-        int idx = 0;
-        for (String pk : allowed) {
-            ContentPart p = byKey.get(pk);
+        List<ContentPart> toSave = new ArrayList<>();
+        for (int i = 0; i < allowedKeys.size(); i++) {
+            String key = allowedKeys.get(i);
+            ContentPart p = existingMap.get(key);
+            
             if (p == null) {
                 p = new ContentPart();
                 p.setContent(content);
-                p.setPartKey(pk);
-                p.setTitle(null);
+                p.setPartKey(key);
                 p.setHtmlContent("");
-                p.setOrderIndex(idx);
-                p = partRepo.save(p);
-            } else {
-                p.setOrderIndex(idx);
-                p = partRepo.save(p);
+                p.setOrderIndex(i);
+                toSave.add(p);
+            } else if (p.getOrderIndex() == null || p.getOrderIndex() != i) {
+                p.setOrderIndex(i);
+                toSave.add(p);
             }
-            result.add(p);
-            idx++;
         }
-        return result;
+
+        if (!toSave.isEmpty()) {
+            partRepo.saveAll(toSave);
+            return partRepo.findByContentIdOrderByOrderIndex(content.getId());
+        }
+
+        return existingParts;
     }
 
     @Override
     @Transactional
     public ContentPartDTO upsertPart(String keyName, String partKey, ContentPartDTO dto) {
-        List<String> allowed = ALLOWED_PART_KEYS_BY_CONTENT.get(keyName);
-        if (allowed == null || !allowed.contains(partKey)) {
-            throw new IllegalArgumentException("PartKey no permitida: " + partKey);
-        }
-        List<ContentPart> parts = ensureAndGetPartsForContentKey(keyName);
-        ContentPart part = parts.stream().filter(p -> p.getPartKey().equals(partKey)).findFirst()
-                .orElseThrow(() -> new RuntimeException("Parte no encontrada: " + partKey));
+        String normalizedKey = keyName.toLowerCase();
+        List<ContentPart> parts = ensureAndGetPartsForContentKey(normalizedKey);
+        
+        ContentPart part = parts.stream()
+                .filter(p -> p.getPartKey().equals(partKey))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("PartKey no permitida: " + partKey));
 
-        String cleaned = Jsoup.clean(dto.getHtmlContent(), HTML_SAFELIST);
-        part.setTitle(dto.getTitle());
-        part.setHtmlContent(cleaned);
-        part.setOrderIndex(dto.getOrderIndex() != null ? dto.getOrderIndex() : part.getOrderIndex());
-        ContentPart saved = partRepo.save(part);
-        return partToDto(saved);
+        updatePartData(part, dto);
+        return partToDto(partRepo.save(part));
     }
 
     @Override
     @Transactional
     public ContentDTO upsertParts(String keyName, List<ContentPartDTO> partsDto) {
-        List<String> allowed = ALLOWED_PART_KEYS_BY_CONTENT.get(keyName);
-        if (allowed == null)
-            throw new IllegalArgumentException("Content key no permitida: " + keyName);
+        String normalizedKey = keyName.toLowerCase();
+        List<ContentPart> existingParts = ensureAndGetPartsForContentKey(normalizedKey);
+        
+        Map<String, ContentPart> byKey = existingParts.stream()
+                .collect(Collectors.toMap(ContentPart::getPartKey, p -> p));
 
-        List<ContentPart> parts = ensureAndGetPartsForContentKey(keyName);
-        Map<String, ContentPart> byKey = parts.stream().collect(Collectors.toMap(ContentPart::getPartKey, p -> p));
-
-        // validate client didn't send disallowed keys
-        for (ContentPartDTO pd : partsDto) {
-            if (!allowed.contains(pd.getPartKey())) {
-                throw new IllegalArgumentException("PartKey no permitida: " + pd.getPartKey());
+        List<ContentPart> toUpdate = new ArrayList<>();
+        for (ContentPartDTO dto : partsDto) {
+            ContentPart p = byKey.get(dto.getPartKey());
+            if (p != null) {
+                updatePartData(p, dto);
+                toUpdate.add(p);
             }
         }
 
-        for (ContentPartDTO pd : partsDto) {
-            ContentPart p = byKey.get(pd.getPartKey());
-            if (p == null)
-                continue;
-            String cleaned = Jsoup.clean(pd.getHtmlContent(), HTML_SAFELIST);
-            p.setTitle(pd.getTitle());
-            p.setHtmlContent(cleaned);
-            p.setOrderIndex(pd.getOrderIndex() != null ? pd.getOrderIndex() : p.getOrderIndex());
-            partRepo.save(p);
+        partRepo.saveAll(toUpdate);
+        return getByKey(normalizedKey);
+    }
+
+    private void updatePartData(ContentPart entity, ContentPartDTO dto) {
+        if (dto.getHtmlContent() != null) {
+            entity.setHtmlContent(Jsoup.clean(dto.getHtmlContent(), HTML_SAFELIST));
         }
-        return getByKey(keyName);
+        if (dto.getTitle() != null) {
+            entity.setTitle(dto.getTitle());
+        }
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ContentDTO> listAll() {
-        return contentRepo.findAll().stream().map(c -> {
-            List<ContentPart> parts = partRepo.findByContentIdOrderByOrderIndex(c.getId());
-            return toDto(c, parts);
-        }).collect(Collectors.toList());
+        return contentRepo.findAll().stream()
+                .map(c -> toDto(c, partRepo.findByContentIdOrderByOrderIndex(c.getId())))
+                .collect(Collectors.toList());
     }
-
 }

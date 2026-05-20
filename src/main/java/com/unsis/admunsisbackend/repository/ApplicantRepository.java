@@ -4,6 +4,8 @@ import com.unsis.admunsisbackend.model.Applicant;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 import java.util.List;
 
@@ -24,6 +26,8 @@ public interface ApplicantRepository extends JpaRepository<Applicant, Long> {
    long countByCareerAndAdmissionYear(String career, int admissionYear);
    boolean existsByFichaAndAdmissionYear(Long ficha, Integer admissionYear);
    boolean existsByCurpAndAdmissionYear(String curp, Integer admissionYear);
+   
+   Page<Applicant> findByAdmissionYear(Integer year, Pageable pageable);
 
    // Conteo agrupado por carrera para un año de admisión dado
    @Query("SELECT a.career as career, COUNT(a) as cnt FROM Applicant a WHERE a.admissionYear = :year GROUP BY a.career")

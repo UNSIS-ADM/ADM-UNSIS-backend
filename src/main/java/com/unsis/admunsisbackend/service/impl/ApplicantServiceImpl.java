@@ -19,6 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -48,6 +51,7 @@ public class ApplicantServiceImpl implements ApplicantService {
     @Autowired
     private UserService userService;
 
+    /*
     @Override
     @Transactional // read-only impl via jakarta.transaction.Transactional (for lazy fetch safety)
     public List<ApplicantResponseDTO> getAllApplicants(Integer year) {
@@ -59,6 +63,24 @@ public class ApplicantServiceImpl implements ApplicantService {
         }
         return list.stream().map(this::toDto).collect(Collectors.toList());
     }
+    */
+
+    @Override
+@Transactional
+public Page<ApplicantResponseDTO> getAllApplicants(Integer year, int page, int size) {
+
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<Applicant> applicants;
+
+    if (year != null) {
+        applicants = applicantRepo.findByAdmissionYear(year, pageable);
+    } else {
+        applicants = applicantRepo.findAll(pageable);
+    }
+
+    return applicants.map(this::toDto);
+}
 
     @Override
     public List<ApplicantResponseDTO> searchApplicants(

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 
+
 @RestController
 @RequestMapping("/api/admin/applicants")
 public class AdminApplicantController {

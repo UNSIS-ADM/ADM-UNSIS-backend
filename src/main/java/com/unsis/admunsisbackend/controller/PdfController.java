@@ -2,35 +2,39 @@ package com.unsis.admunsisbackend.controller;
 
 import com.unsis.admunsisbackend.dto.PdfResponse;
 import com.unsis.admunsisbackend.service.PdfService;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Controlador para exponer el endpoint unificado de reportes.
+ */
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/report") // Asegúrate de que coincida con tu ruta actual
+@CrossOrigin(origins = "*") // Ajusta según la seguridad de tu proyecto
 public class PdfController {
 
     @Autowired
     private PdfService pdfService;
 
     /**
-     * Genera un PDF con la lista de aspirantes registrados.
-     * Solo accesible para administradores.
+     * Endpoint unificado que retorna el JSON con el PDF y el Excel en Base64.
      */
-    @GetMapping("/generate-pdf")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<?> generateApplicantsPdf() {
+    @GetMapping("/generate") // Asegúrate de que coincida con tu generatePdfEndpoint
+    public ResponseEntity<PdfResponse> generateReport() {
+        // Llamamos al servicio unificado que ya fabricamos
         PdfResponse response = pdfService.generateApplicantsReport();
 
-        if (!response.isSuccess()) {
-            return ResponseEntity.badRequest().body(response);
+        if (response.isSuccess()) {
+            // 🔹 Retornamos el JSON completo de forma directa al frontend
+            return ResponseEntity.ok(response);
+        } else {
+            // Si algo falló internamente, mandamos el error en el JSON con un estado 500
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + response.getFileName())
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(response.getFileBytes());
     }
 }

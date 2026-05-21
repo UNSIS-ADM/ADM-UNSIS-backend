@@ -39,15 +39,26 @@ public ResponseEntity<Page<ApplicantResponseDTO>> getAll(
             service.getAllApplicants(year, page, size));
 }
     @GetMapping("/search")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
-    public ResponseEntity<List<ApplicantResponseDTO>> search(
-            @RequestParam(required = false) Long ficha,
-            @RequestParam(required = false) String curp,
-            @RequestParam(required = false) String career,
-            @RequestParam(required = false, name = "fullName") String fullName) {
-        return ResponseEntity.ok(
-                service.searchApplicants(ficha, curp, career, fullName));
-    }
+@PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
+public ResponseEntity<Page<ApplicantResponseDTO>> search(
+
+        @RequestParam(required = false) Integer year,
+        @RequestParam(required = false) String career,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) String search,
+
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "5") int size) {
+
+    return ResponseEntity.ok(
+            service.searchApplicants(
+                    year,
+                    career,
+                    status,
+                    search,
+                    page,
+                    size));
+}
 
     @PutMapping("/{curp}/career")
     @PreAuthorize("hasAuthority('ROLE_APPLICANT')")
@@ -74,6 +85,12 @@ public ResponseEntity<Page<ApplicantResponseDTO>> getAll(
 
         // Llama al service. Si tu ApplicantService interface necesita extender, llama al impl directamente
         return ((ApplicantServiceImpl) applicantService).markAttendance(id, status, username);
+    }
+
+    @GetMapping("/careers")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
+    public ResponseEntity<List<String>> getCareers() {
+        return ResponseEntity.ok(service.getAllCareers());
     }
 
 

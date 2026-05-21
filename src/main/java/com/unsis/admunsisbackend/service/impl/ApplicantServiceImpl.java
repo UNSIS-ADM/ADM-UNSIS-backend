@@ -80,47 +80,30 @@ public Page<ApplicantResponseDTO> getAllApplicants(Integer year, int page, int s
     return applicants.map(this::toDto);
 }
 
-  @Override
-public List<ApplicantResponseDTO> searchApplicants(
-        Long ficha,
-        String curp,
+@Override
+public Page<ApplicantResponseDTO> searchApplicants(
+        Integer year,
         String career,
-        String fullName) {
+        String status,
+        String search,
+        int page,
+        int size) {
 
-    List<Applicant> results = new java.util.ArrayList<>();
+    Pageable pageable = PageRequest.of(page, size);
 
-    // Buscar por ficha
-    if (ficha != null) {
-        applicantRepo.findByFicha(ficha)
-                .ifPresent(results::add);
-    }
+    Page<Applicant> applicants = applicantRepo.searchApplicants(
+            year,
+            career,
+            status,
+            search,
+            pageable);
 
-    // Buscar por CURP
-    if (curp != null && !curp.isBlank()) {
-        results.addAll(
-                applicantRepo.findByCurpContainingIgnoreCase(curp));
-    }
+    return applicants.map(this::toDto);
+}
 
-    // Buscar por carrera
-    if (career != null && !career.isBlank()) {
-        results.addAll(
-                applicantRepo.findByCareerContainingIgnoreCase(career));
-    }
-
-    // Buscar por nombre
-    if (fullName != null && !fullName.isBlank()) {
-        results.addAll(
-                applicantRepo.findByUser_FullNameContainingIgnoreCase(fullName));
-    }
-
-    // Eliminar duplicados
-    results = results.stream()
-            .distinct()
-            .collect(Collectors.toList());
-
-    return results.stream()
-            .map(this::toDto)
-            .collect(Collectors.toList());
+@Override
+public List<String> getAllCareers() {
+    return applicantRepo.findDistinctCareers();
 }
 
     @Override

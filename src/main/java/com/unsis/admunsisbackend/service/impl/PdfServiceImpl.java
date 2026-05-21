@@ -11,22 +11,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 
+// Imports para iText (PDF)
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+// Imports para Apache POI (Excel)
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFColor; // 👈 Importante para colores personalizados en Excel
+
 import java.io.ByteArrayOutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-// Importaciones para iText (PDF)
-import com.itextpdf.text.*;
-import com.itextpdf.text.Font;
-import com.itextpdf.text.pdf.*;
-
-// Importaciones para Apache POI (Excel)
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFColor;
-
 /**
- * Servicio unificado para generar reportes en PDF y Excel en una sola petición.
+ * Servicio para generar reportes unificados (PDF + Excel) en un ZIP con colores institucionales.
  */
 @Service
 public class PdfServiceImpl implements PdfService {
@@ -36,28 +42,22 @@ public class PdfServiceImpl implements PdfService {
     @Autowired
     private ApplicantRepository applicantRepository;
 
-    /**
-     * Genera un único JSON que contiene tanto el reporte PDF como el Excel mapeados en Base64.
-     */
     @Override
     @Transactional
     public PdfResponse generateApplicantsReport() {
         PdfResponse response = new PdfResponse();
         List<Applicant> applicants = applicantRepository.findAll();
 
-        byte[] pdfResultBytes = null;
-        byte[] excelResultBytes = null;
+        byte[] pdfBytes = null;
+        byte[] excelBytes = null;
 
-        // ==========================================
-        // 1. GENERACIÓN DEL ARCHIVO PDF
-        // ==========================================
-        try (ByteArrayOutputStream pdfBaos = new ByteArrayOutputStream()) {
+        // --- GENERACIÓN DEL PDF ---
+        try (ByteArrayOutputStream baosPdf = new ByteArrayOutputStream()) {
             Document document = new Document(PageSize.A4.rotate(), 36, 36, 54, 36);
-            PdfWriter.getInstance(document, pdfBaos);
+            PdfWriter.getInstance(document, baosPdf);
             document.open();
 
-            // Título
-            Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD);
+            com.itextpdf.text.Font titleFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 16, com.itextpdf.text.Font.BOLD);
             Paragraph title = new Paragraph("Reporte de Aspirantes - UNSIS", titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             title.setSpacingAfter(20f);
@@ -72,9 +72,6 @@ public class PdfServiceImpl implements PdfService {
                 table.setSpacingAfter(10f);
                 table.setHeaderRows(1);
 
-                float[] columnWidths = {1f, 3f, 2.2f, 2.5f, 1.5f, 1.3f, 1f};
-                table.setWidths(columnWidths);
-
                 addTableHeader(table, new String[]{
                     "Ficha", "Nombre completo", "CURP", "Carrera", "Lugar", "Estado", "Asistió"
                 });
@@ -88,69 +85,56 @@ public class PdfServiceImpl implements PdfService {
                     table.addCell(a.getStatus());
                     table.addCell(a.getAttendanceStatus());
                 }
-
                 document.add(table);
             }
 
             Paragraph footer = new Paragraph(
                 "Generado automáticamente el " +
                 java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
-                new Font(Font.FontFamily.HELVETICA, 8, Font.ITALIC)
+                new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 8, com.itextpdf.text.Font.ITALIC)
             );
             footer.setAlignment(Element.ALIGN_RIGHT);
             document.add(footer);
 
             document.close();
-            pdfResultBytes = pdfBaos.toByteArray();
+            pdfBytes = baosPdf.toByteArray();
 
         } catch (Exception e) {
-            logger.error("Error crítico al fabricar el PDF: {}", e.getMessage(), e);
-            response.setSuccess(false);
-            response.setMessage("Error al generar sección PDF: " + e.getMessage());
-            return response;
+            logger.error("Error al construir el PDF en el servicio: {}", e.getMessage(), e);
         }
 
-        // ==========================================
-        // 2. GENERACIÓN DEL ARCHIVO EXCEL
-        // ==========================================
-        try (Workbook workbook = new XSSFWorkbook(); 
-             ByteArrayOutputStream excelBaos = new ByteArrayOutputStream()) {
-            
+        // --- GENERACIÓN DEL EXCEL ---
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream baosExcel = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Aspirantes");
-
-            // Estilo para el encabezado (#6a1b1b Guinda)
-            CellStyle headerStyle = workbook.createCellStyle();
-            byte[] guindaRGB = new byte[]{(byte) 106, (byte) 27, (byte) 27};
-            XSSFColor xssfGuinda = new XSSFColor(guindaRGB, null);
-            
-            headerStyle.setFillForegroundColor(xssfGuinda);
-            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            headerStyle.setAlignment(HorizontalAlignment.CENTER);
-            headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
 
             org.apache.poi.ss.usermodel.Font headerFont = workbook.createFont();
             headerFont.setBold(true);
             headerFont.setColor(IndexedColors.WHITE.getIndex());
-            headerStyle.setFont(headerFont);
 
-            String[] headers = {"Ficha", "Nombre completo", "CURP", "Carrera", "Lugar", "Estado", "Asistió"};
+            CellStyle headerCellStyle = workbook.createCellStyle();
+            headerCellStyle.setFont(headerFont);
+
+            // Convertimos el color hexadecimal #6a1b1b a bytes para Apache POI
+            byte[] rgbGunder = new byte[]{(byte) 106, (byte) 27, (byte) 27};
+            XSSFColor customColor = new XSSFColor(rgbGunder, null);
+            
+            headerCellStyle.setFillForegroundColor(customColor);
+            headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerCellStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            // Crear Fila de Encabezados
+            String[] columns = {"Ficha", "Nombre completo", "CURP", "Carrera", "Lugar", "Estado", "Asistió"};
             Row headerRow = sheet.createRow(0);
-            headerRow.setHeightInPoints(25);
-
-            for (int i = 0; i < headers.length; i++) {
+            for (int i = 0; i < columns.length; i++) {
                 Cell cell = headerRow.createCell(i);
-                cell.setCellValue(headers[i]);
-                cell.setCellStyle(headerStyle);
+                cell.setCellValue(columns[i]);
+                cell.setCellStyle(headerCellStyle);
             }
 
+            // Llenar Filas con Datos
             int rowNum = 1;
-            CellStyle dataStyle = workbook.createCellStyle();
-            dataStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-
             for (Applicant a : applicants) {
                 Row row = sheet.createRow(rowNum++);
-                row.setHeightInPoints(18);
-
                 row.createCell(0).setCellValue(a.getFicha());
                 row.createCell(1).setCellValue(a.getUser() != null ? a.getUser().getFullName() : "N/D");
                 row.createCell(2).setCellValue(a.getCurp());
@@ -158,49 +142,48 @@ public class PdfServiceImpl implements PdfService {
                 row.createCell(4).setCellValue(a.getLocation());
                 row.createCell(5).setCellValue(a.getStatus());
                 row.createCell(6).setCellValue(a.getAttendanceStatus());
-
-                for (int i = 0; i < headers.length; i++) {
-                    row.getCell(i).setCellStyle(dataStyle);
-                }
             }
 
-            for (int i = 0; i < headers.length; i++) {
+            // Autoajustar las columnas
+            for (int i = 0; i < columns.length; i++) {
                 sheet.autoSizeColumn(i);
             }
 
-            workbook.write(excelBaos);
-            excelResultBytes = excelBaos.toByteArray();
+            workbook.write(baosExcel);
+            excelBytes = baosExcel.toByteArray();
 
         } catch (Exception e) {
-            logger.error("Error crítico al fabricar el Excel: {}", e.getMessage(), e);
-            response.setSuccess(false);
-            response.setMessage("Error al generar sección Excel: " + e.getMessage());
-            return response;
+            logger.error("Error al construir el Excel en el servicio: {}", e.getMessage(), e);
         }
 
-        // ==========================================
-        // 3. ARMADO DE LA RESPUESTA UNIFICADA JSON
-        // ==========================================
-        response.setSuccess(true);
-        response.setMessage("Reportes PDF y Excel empaquetados con éxito.");
-        response.setPdfBytes(pdfResultBytes);
-        response.setExcelBytes(excelResultBytes);
-        response.setPdfFileName("reporte_aspirantes.pdf");
-        response.setExcelFileName("reporte_aspirantes.xlsx");
+        // --- RESPUESTA UNIFICADA ---
+        if (pdfBytes != null && excelBytes != null) {
+            response.setSuccess(true);
+            response.setMessage("Reportes PDF y Excel empaquetados con éxito.");
+            response.setPdfBytes(pdfBytes);     
+            response.setExcelBytes(excelBytes); 
+            
+            response.setFileBytes(pdfBytes);
+            response.setFileName("reportes_admision.zip");
+        } else {
+            response.setSuccess(false);
+            response.setMessage("Error interno al procesar uno o ambos archivos del reporte.");
+        }
 
         return response;
     }
 
     private void addTableHeader(PdfPTable table, String[] headers) {
-        Font headerFont = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.WHITE);
+        com.itextpdf.text.Font headerFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 10, com.itextpdf.text.Font.BOLD, BaseColor.WHITE);
+        
+        // 106, 27, 27 equivalen al hexadecimal #6A1B1B en RGB
         BaseColor headerColor = new BaseColor(106, 27, 27);
 
         for (String h : headers) {
             PdfPCell headerCell = new PdfPCell(new Phrase(h, headerFont));
             headerCell.setBackgroundColor(headerColor);
             headerCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-            headerCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-            headerCell.setPadding(6);
+            headerCell.setPadding(5);
             table.addCell(headerCell);
         }
     }

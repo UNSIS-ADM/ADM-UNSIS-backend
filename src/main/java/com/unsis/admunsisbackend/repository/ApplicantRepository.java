@@ -28,9 +28,36 @@ public interface ApplicantRepository extends JpaRepository<Applicant, Long> {
    boolean existsByCurpAndAdmissionYear(String curp, Integer admissionYear);
    
    Page<Applicant> findByAdmissionYear(Integer year, Pageable pageable);
-
+   
+   @Query("""
+         SELECT a FROM Applicant a
+         WHERE
+         (:year IS NULL OR a.admissionYear = :year)
+         AND
+         (:career IS NULL OR LOWER(a.career) LIKE LOWER(CONCAT('%', :career, '%')))
+         AND
+         (:status IS NULL OR LOWER(a.status) LIKE LOWER(CONCAT('%', :status, '%')))
+         AND
+         (
+             :search IS NULL
+             OR LOWER(a.curp) LIKE LOWER(CONCAT('%', :search, '%'))
+             OR LOWER(a.user.fullName) LIKE LOWER(CONCAT('%', :search, '%'))
+             OR CAST(a.ficha AS string) LIKE CONCAT('%', :search, '%')
+         )
+         """)
+   Page<Applicant> searchApplicants(
+         @Param("year") Integer year,
+         @Param("career") String career,
+         @Param("status") String status,
+         @Param("search") String search,
+         Pageable pageable);
+   
    // Conteo agrupado por carrera para un año de admisión dado
    @Query("SELECT a.career as career, COUNT(a) as cnt FROM Applicant a WHERE a.admissionYear = :year GROUP BY a.career")
    List<Object[]> countApplicantsGroupedByCareer(@Param("year") int year);
 
+   @Query("SELECT DISTINCT a.career FROM Applicant a ORDER BY a.career ASC")
+   List<String> findDistinctCareers();
+
 }
+

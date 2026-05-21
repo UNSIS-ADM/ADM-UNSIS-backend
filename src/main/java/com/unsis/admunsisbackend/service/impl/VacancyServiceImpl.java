@@ -33,12 +33,12 @@ public class VacancyServiceImpl implements VacancyService {
         int y = (year != null ? year : Year.now().getValue());
         return vacancyRepo.findByAdmissionYear(y).stream().map(VacancyDTO::fromEntity).collect(Collectors.toList());
     }
-    
+
     public VacancyServiceImpl(VacancyRepository vacancyRepo) {
         this.vacancyRepo = vacancyRepo;
     }
 
-     @Override
+    @Override
     @Transactional(readOnly = true)
     public List<VacancyDTO> listAvailableSlots(Integer year) {
         int y = (year != null ? year : Year.now().getValue());
@@ -47,7 +47,8 @@ public class VacancyServiceImpl implements VacancyService {
         List<VacancyDTO> result = new ArrayList<>(vacs.size());
         for (Vacancy v : vacs) {
             String career = v.getCareer();
-            // if availableSlots already present use it, otherwise compute from cuposInserted - inscritos
+            // if availableSlots already present use it, otherwise compute from
+            // cuposInserted - inscritos
             Integer avail = v.getAvailableSlots();
             if (avail == null) {
                 int cupos = Optional.ofNullable(v.getCuposInserted()).orElse(0);
@@ -55,7 +56,10 @@ public class VacancyServiceImpl implements VacancyService {
                 int inscritos = safeLongToInt(inscritosLong);
                 avail = Math.max(0, cupos - inscritos);
             }
-            result.add(VacancyDTO.of(career, avail));
+            VacancyDTO dto = VacancyDTO.fromEntity(v);
+            dto.setAvailableSlots(avail);
+
+            result.add(dto);
         }
 
         return result;
@@ -178,7 +182,7 @@ public class VacancyServiceImpl implements VacancyService {
         return (int) value;
     }
 
-     @Override
+    @Override
     @Transactional
     public Vacancy updateCuposInserted(String career, Integer admissionYear, Integer limit) {
         if (career == null || admissionYear == null || limit == null) {
@@ -186,13 +190,15 @@ public class VacancyServiceImpl implements VacancyService {
         }
 
         String normCareer = normalizeCareer(career);
-        // Buscar vacancy (si no existe la creamos con inscritosCount = 0, pero NO lo recalculamos desde applicants)
+        // Buscar vacancy (si no existe la creamos con inscritosCount = 0, pero NO lo
+        // recalculamos desde applicants)
         Vacancy v = vacancyRepo.findByCareerAndAdmissionYear(normCareer, admissionYear)
                 .orElseGet(() -> {
                     Vacancy nv = new Vacancy();
                     nv.setCareer(normCareer);
                     nv.setAdmissionYear(admissionYear);
-                    nv.setInscritosCount(0); // respetamos que Excel será la fuente (si luego subes Excel lo actualizará)
+                    nv.setInscritosCount(0); // respetamos que Excel será la fuente (si luego subes Excel lo
+                                             // actualizará)
                     nv.setCuposInserted(0);
                     nv.setReservedCount(0);
                     nv.setAvailableSlots(0);
@@ -207,7 +213,8 @@ public class VacancyServiceImpl implements VacancyService {
             changed = true;
         }
 
-        // Recalcular availableSlots con INSCRITOS que ya están guardados (no cambiamos inscritosCount)
+        // Recalcular availableSlots con INSCRITOS que ya están guardados (no cambiamos
+        // inscritosCount)
         int inscritos = Optional.ofNullable(v.getInscritosCount()).orElse(0);
         int available = Math.max(0, limit - inscritos);
         if (!Optional.ofNullable(v.getAvailableSlots()).orElse(0).equals(available)) {

@@ -12,9 +12,7 @@ import com.unsis.admunsisbackend.repository.VacancyRepository;
 import com.unsis.admunsisbackend.service.ApplicantService;
 import com.unsis.admunsisbackend.service.UserService;
 import com.unsis.admunsisbackend.repository.UserRepository;
-
 import jakarta.transaction.Transactional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

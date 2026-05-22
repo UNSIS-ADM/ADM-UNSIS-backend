@@ -27,9 +27,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 // dentro de la clase ApplicantServiceImpl, junto a applicantRepo y vacancyRepo
-
 @Service
 public class ApplicantServiceImpl implements ApplicantService {
     private static final Logger logger = LoggerFactory.getLogger(ApplicantServiceImpl.class);
@@ -49,62 +47,48 @@ public class ApplicantServiceImpl implements ApplicantService {
     @Autowired
     private UserService userService;
 
-    /*
     @Override
-    @Transactional // read-only impl via jakarta.transaction.Transactional (for lazy fetch safety)
-    public List<ApplicantResponseDTO> getAllApplicants(Integer year) {
-        List<Applicant> list;
+    @Transactional
+    public Page<ApplicantResponseDTO> getAllApplicants(Integer year, int page, int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Applicant> applicants;
+
         if (year != null) {
-            list = applicantRepo.findByAdmissionYear(year);
+            applicants = applicantRepo.findByAdmissionYear(year, pageable);
         } else {
-            list = applicantRepo.findAll();
+            applicants = applicantRepo.findAll(pageable);
         }
-        return list.stream().map(this::toDto).collect(Collectors.toList());
+
+        return applicants.map(this::toDto);
     }
-    */
 
     @Override
-@Transactional
-public Page<ApplicantResponseDTO> getAllApplicants(Integer year, int page, int size) {
+    public Page<ApplicantResponseDTO> searchApplicants(
+            Integer year,
+            String career,
+            String status,
+            String search,
+            int page,
+            int size) {
 
-    Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size);
 
-    Page<Applicant> applicants;
+        Page<Applicant> applicants = applicantRepo.searchApplicants(
+                year,
+                career,
+                status,
+                search,
+                pageable);
 
-    if (year != null) {
-        applicants = applicantRepo.findByAdmissionYear(year, pageable);
-    } else {
-        applicants = applicantRepo.findAll(pageable);
+        return applicants.map(this::toDto);
     }
 
-    return applicants.map(this::toDto);
-}
-
-@Override
-public Page<ApplicantResponseDTO> searchApplicants(
-        Integer year,
-        String career,
-        String status,
-        String search,
-        int page,
-        int size) {
-
-    Pageable pageable = PageRequest.of(page, size);
-
-    Page<Applicant> applicants = applicantRepo.searchApplicants(
-            year,
-            career,
-            status,
-            search,
-            pageable);
-
-    return applicants.map(this::toDto);
-}
-
-@Override
-public List<String> getAllCareers() {
-    return applicantRepo.findDistinctCareers();
-}
+    @Override
+    public List<String> getAllCareers() {
+        return applicantRepo.findDistinctCareers();
+    }
 
     @Override
     @Transactional
@@ -129,13 +113,6 @@ public List<String> getAllCareers() {
         if (inscritos >= vac.getCuposInserted()) {
             throw new RuntimeException("Cupo agotado para " + newCareer);
         }
-        /**
-         * int available = Optional.ofNullable(vac.getAvailableSlots()).orElse(0);
-         * if (available <= 0) {
-         * throw new RuntimeException("Cupo agotado para " + newCareer);
-         * }
-         * 
-         */
 
         // todo OK → actualizar
         a.setCareer(newCareer);
@@ -165,32 +142,8 @@ public List<String> getAllCareers() {
         Applicant a = applicantRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aspirante no encontrado"));
 
-        // FICHA (unicidad por año
-        /*
-         * if (dto.getFicha() != null) {
-         * Long nuevaFicha = dto.getFicha();
-         * if (!nuevaFicha.equals(a.getFicha()) &&
-         * applicantRepo.existsByFicha(nuevaFicha)) {
-         * throw new ResponseStatusException(HttpStatus.CONFLICT,
-         * "Ya existe un aspirante con ficha: " + nuevaFicha);
-         * }
-         * a.setFicha(nuevaFicha);
-         * }
-         * 
-         * // CURP (unicidad)
-         * if (dto.getCurp() != null) {
-         * String nuevaCurp = dto.getCurp().trim().toUpperCase();
-         * if (!nuevaCurp.equalsIgnoreCase(a.getCurp()) &&
-         * applicantRepo.existsByCurp(nuevaCurp)) {
-         * throw new ResponseStatusException(HttpStatus.CONFLICT,
-         * "Ya existe un aspirante con CURP: " + nuevaCurp);
-         * }
-         * a.setCurp(nuevaCurp);
-         * }
-         */
-
         if (dto.getFicha() != null) {
-            Long nuevaFicha = dto.getFicha();
+            String nuevaFicha = dto.getFicha();
             if (!nuevaFicha.equals(a.getFicha()) &&
                     applicantRepo.existsByFichaAndAdmissionYear(nuevaFicha, a.getAdmissionYear())) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -225,7 +178,7 @@ public List<String> getAllCareers() {
             a.setFinalGrade(dto.getFinalGrade());
         if (dto.getAdmissionYear() != null)
             a.setAdmissionYear(dto.getAdmissionYear());
-            
+
         // Actualizar User relacionado (fullName, lastLogin)
         User user = a.getUser();
         if (user != null) {
@@ -242,32 +195,32 @@ public List<String> getAllCareers() {
 
         if (hasAdmissionFields) {
             if (hasAdmissionFields) {
-            // Determinar año objetivo (si no viene, usamos el admissionYear del applicant)
-            Integer targetYear = dto.getAdmissionYear() != null ? dto.getAdmissionYear() : a.getAdmissionYear();
-            // Buscar el último resultado
-            AdmissionResult last = admissionResultRepo.findTopByApplicantOrderByCreatedAtDesc(a).orElse(null);
+                // Determinar año objetivo (si no viene, usamos el admissionYear del applicant)
+                Integer targetYear = dto.getAdmissionYear() != null ? dto.getAdmissionYear() : a.getAdmissionYear();
+                // Buscar el último resultado
+                AdmissionResult last = admissionResultRepo.findTopByApplicantOrderByCreatedAtDesc(a).orElse(null);
 
-            if (last != null && last.getAdmissionYear() != null && last.getAdmissionYear().equals(targetYear)) {
-                if (dto.getCareerAtResult() != null)
-                    last.setCareerAtResult(dto.getCareerAtResult());
-                if (dto.getScore() != null)
-                    last.setScore(dto.getScore());
-                if (dto.getAdmissionYear() != null)
-                    last.setAdmissionYear(dto.getAdmissionYear());
-                admissionResultRepo.save(last);
-            } else {
-                AdmissionResult newRes = new AdmissionResult();
-                newRes.setApplicant(a);
-                newRes.setCareerAtResult(dto.getCareerAtResult());
-                newRes.setScore(dto.getScore());
-                newRes.setAdmissionYear(targetYear);
-                admissionResultRepo.save(newRes);
+                if (last != null && last.getAdmissionYear() != null && last.getAdmissionYear().equals(targetYear)) {
+                    if (dto.getCareerAtResult() != null)
+                        last.setCareerAtResult(dto.getCareerAtResult());
+                    if (dto.getScore() != null)
+                        last.setScore(dto.getScore());
+                    if (dto.getAdmissionYear() != null)
+                        last.setAdmissionYear(dto.getAdmissionYear());
+                    admissionResultRepo.save(last);
+                } else {
+                    AdmissionResult newRes = new AdmissionResult();
+                    newRes.setApplicant(a);
+                    newRes.setCareerAtResult(dto.getCareerAtResult());
+                    newRes.setScore(dto.getScore());
+                    newRes.setAdmissionYear(targetYear);
+                    admissionResultRepo.save(newRes);
+                }
             }
-        }
         }
 
         Applicant saved = applicantRepo.save(a);
-        
+
         // --- Aquí sincronizamos las credenciales del usuario ---
         try {
             userService.syncUserCredentialsForApplicant(saved);
@@ -281,52 +234,54 @@ public List<String> getAllCareers() {
         return toDto(saved);
     }
 
-    //Tomar asistencia
+    // Tomar asistencia
     @Transactional
-public ApplicantResponseDTO markAttendance(Long applicantId, String status, String marcadorUsername) {
-    Applicant a = applicantRepo.findById(applicantId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aspirante no encontrado"));
+    public ApplicantResponseDTO markAttendance(Long applicantId, String status, String marcadorUsername) {
+        Applicant a = applicantRepo.findById(applicantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aspirante no encontrado"));
 
-    if (status == null) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status requerido: ASISTIÓ o NP o PENDIENTE");
+        if (status == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status requerido: ASISTIÓ o NP o PENDIENTE");
+        }
+
+        String s = status.trim().toUpperCase();
+        if (!s.equals("ASISTIÓ") && !s.equals("NP") && !s.equals("PENDIENTE")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status inválido. Usar ASISTIÓ o NP o PENDIENTE");
+        }
+
+        a.setAttendanceStatus(s);
+        Applicant saved = applicantRepo.save(a);
+        return toDto(saved);
     }
-
-    String s = status.trim().toUpperCase();
-    if (!s.equals("ASISTIÓ") && !s.equals("NP")&& !s.equals("PENDIENTE")) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status inválido. Usar ASISTIÓ o NP o PENDIENTE");
-    }
-
-    a.setAttendanceStatus(s);
-    Applicant saved = applicantRepo.save(a);
-    return toDto(saved);
-}
 
     private ApplicantResponseDTO toDto(Applicant a) {
-    ApplicantResponseDTO dto = new ApplicantResponseDTO();
-    dto.setId(a.getId());
-    dto.setFicha(a.getFicha());
-    dto.setCurp(a.getCurp());
-    dto.setFullName(a.getUser() != null ? a.getUser().getFullName() : null);
-    dto.setCareer(a.getCareer());
-    dto.setLocation(a.getLocation());
-    dto.setExamRoom(a.getExamRoom());
-    dto.setExamDate(a.getExamDate());
-    dto.setStatus(a.getStatus());
-    dto.setAdmissionYear(a.getAdmissionYear());
-    dto.setLastLogin(a.getUser() != null ? a.getUser().getLastLogin() : null);
+        ApplicantResponseDTO dto = new ApplicantResponseDTO();
+        dto.setId(a.getId());
+        dto.setFicha(a.getFicha());
+        dto.setCurp(a.getCurp());
+        dto.setFullName(a.getUser() != null ? a.getUser().getFullName() : null);
+        dto.setCareer(a.getCareer());
+        dto.setLocation(a.getLocation());
+        dto.setExamRoom(a.getExamRoom());
+        dto.setExamDate(a.getExamDate());
+        dto.setStatus(a.getStatus());
+        dto.setAdmissionYear(a.getAdmissionYear());
+        dto.setLastLogin(a.getUser() != null ? a.getUser().getLastLogin() : null);
 
-    // Buscar el último admission_result y rellenar careerAtResult, score, resultDate
-    admissionResultRepo.findTopByApplicantOrderByCreatedAtDesc(a).ifPresent(res -> {
-        dto.setCareerAtResult(res.getCareerAtResult());
-        dto.setScore(res.getScore());
-        dto.setFinalGrade(res.getFinalGrade());
-        dto.setResultDate(res.getCreatedAt());
-        dto.setComment(res.getComment());
-        // Opcional: dto.setStatus(res.getStatus()); si quieres mostrar el status del resultado
-    });
+        // Buscar el último admission_result y rellenar careerAtResult, score,
+        // resultDate
+        admissionResultRepo.findTopByApplicantOrderByCreatedAtDesc(a).ifPresent(res -> {
+            dto.setCareerAtResult(res.getCareerAtResult());
+            dto.setScore(res.getScore());
+            dto.setFinalGrade(res.getFinalGrade());
+            dto.setResultDate(res.getCreatedAt());
+            dto.setComment(res.getComment());
+            // Opcional: dto.setStatus(res.getStatus()); si quieres mostrar el status del
+            // resultado
+        });
 
-    dto.setAttendanceStatus(a.getAttendanceStatus());
+        dto.setAttendanceStatus(a.getAttendanceStatus());
 
-    return dto;
-}
+        return dto;
+    }
 }

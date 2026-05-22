@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 public class CareerChangeRequestDTO {
     private Long id;
     private Long applicantId;
-    private Long ficha;
+    private String ficha;
     private String fullName;
     private String oldCareer;
     private String newCareer;
@@ -33,11 +33,11 @@ public class CareerChangeRequestDTO {
         this.applicantId = applicantId;
     }
 
-    public Long getFicha() {
+    public String getFicha() {
         return ficha;
     }
 
-    public void setFicha(Long ficha) {
+    public void setFicha(String ficha) {
         this.ficha = ficha;
     }
 

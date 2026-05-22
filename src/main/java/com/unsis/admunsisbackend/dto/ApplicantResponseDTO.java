@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 /* Objeto de transferencia de datos para respuestas de aspirantes */
 public class ApplicantResponseDTO {
     private Long id;
-    private Long ficha;
+    private String ficha;
     private String curp;
     private String careerAtResult; 
     private String fullName;
@@ -40,11 +40,11 @@ public class ApplicantResponseDTO {
         this.id = id;
     }
 
-    public Long getFicha() {
+    public String getFicha() {
         return ficha;
     }
 
-    public void setFicha(Long ficha) {
+    public void setFicha(String ficha) {
         this.ficha = ficha;
     }
 

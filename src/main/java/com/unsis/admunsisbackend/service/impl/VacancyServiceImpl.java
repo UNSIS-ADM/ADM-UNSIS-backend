@@ -85,8 +85,9 @@ public class VacancyServiceImpl implements VacancyService {
             v = opt.get();
 
             // primero recalculemos inscritos actuales desde applicants
-            int inscritos = (int) applicantRepo.countByCareerAndAdmissionYear(career, y);
-            v.setInscritosCount(inscritos);
+            long inscritos = applicantRepo.countByCareerAndAdmissionYear(career, y);
+            int inscritosInt = safeLongToInt(inscritos);
+            v.setInscritosCount(inscritosInt);
 
             // Validación: no permitir cupos menores que los inscritos actuales
             if (newCuposInserted < inscritos) {
@@ -96,7 +97,7 @@ public class VacancyServiceImpl implements VacancyService {
             }
 
             v.setCuposInserted(newCuposInserted);
-            int available = Math.max(0, newCuposInserted - inscritos);
+            int available = Math.max(0, newCuposInserted - safeLongToInt(inscritos));
             v.setAvailableSlots(available);
 
             v = vacancyRepo.save(v);
@@ -105,18 +106,22 @@ public class VacancyServiceImpl implements VacancyService {
             v.setCareer(career);
             v.setAdmissionYear(y);
 
-            int inscritos = (int) applicantRepo.countByCareerAndAdmissionYear(career, y);
-            v.setInscritosCount(inscritos);
+            long inscritos = applicantRepo.countByCareerAndAdmissionYear(career, y);
+            int inscritosInt = safeLongToInt(inscritos);
 
-            if (newCuposInserted < inscritos) {
+            v.setInscritosCount(inscritosInt);
+
+            if (newCuposInserted < inscritosInt) {
                 throw new IllegalArgumentException(String.format(
                         "Los cupos (%d) no pueden ser menores que el número de inscritos ya cargados (%d).",
-                        newCuposInserted, inscritos));
+                        newCuposInserted, inscritosInt));
             }
 
             v.setCuposInserted(newCuposInserted);
-            v.setAvailableSlots(Math.max(0, newCuposInserted - inscritos));
 
+            int available = Math.max(0, newCuposInserted - inscritosInt);
+
+            v.setAvailableSlots(available);
             v = vacancyRepo.save(v);
         }
 
@@ -168,7 +173,7 @@ public class VacancyServiceImpl implements VacancyService {
         v.setInscritosCount(safeLongToInt(inscritos));
 
         int cupos = Optional.ofNullable(v.getCuposInserted()).orElse(0);
-        int available = Math.max(0, cupos - (int) inscritos);
+        int available = Math.max(0, cupos - safeLongToInt(inscritos));
         v.setAvailableSlots(available);
 
         vacancyRepo.save(v);

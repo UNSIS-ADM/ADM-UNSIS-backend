@@ -12,8 +12,8 @@ import java.util.List;
 /* Repositorio para los aspirantes */
 public interface ApplicantRepository extends JpaRepository<Applicant, Long> {
    // Búsquedas directas
-   Optional<Applicant> findByFicha(Long ficha);
-   boolean existsByFicha(Long ficha);
+   Optional<Applicant> findByFicha(String ficha);
+   boolean existsByFicha(String ficha);
    Optional<Applicant> findByCurp(String curp);
    boolean existsByCurp(String curp);
 
@@ -23,13 +23,14 @@ public interface ApplicantRepository extends JpaRepository<Applicant, Long> {
    List<Applicant> findByUser_FullNameContainingIgnoreCase(String fullName);
    Optional<Applicant> findByUser_Username(String username);
    List<Applicant> findByAdmissionYear(Integer admissionYear);
-   long countByCareerAndAdmissionYear(String career, int admissionYear);
-   boolean existsByFichaAndAdmissionYear(Long ficha, Integer admissionYear);
+   
+   Long countByCareerAndAdmissionYear(String career, int admissionYear);
+   boolean existsByFichaAndAdmissionYear(String ficha, Integer admissionYear);
    boolean existsByCurpAndAdmissionYear(String curp, Integer admissionYear);
    
    Page<Applicant> findByAdmissionYear(Integer year, Pageable pageable);
    
-   @Query("""
+   @Query("""     
          SELECT a FROM Applicant a
          WHERE
          (:year IS NULL OR a.admissionYear = :year)

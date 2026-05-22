@@ -8,20 +8,17 @@ import com.unsis.admunsisbackend.repository.UserRepository;
 import com.unsis.admunsisbackend.security.JwtTokenProvider;
 import com.unsis.admunsisbackend.service.AuthService;
 import com.unsis.admunsisbackend.service.RefreshTokenService;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
 import com.unsis.admunsisbackend.model.User;
 import com.unsis.admunsisbackend.model.RefreshToken;
 import com.unsis.admunsisbackend.model.Role;
 import java.util.Set;
 import java.util.Map;
-
 
 @RestController
 @RequestMapping("/auth")
@@ -55,14 +52,7 @@ public class AuthController {
         // 3) Crear refresh token y devolverlo también
         User user = userRepository.findByUsername(response.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        // define duración del refresh token (ejemplo: 7 días) o para pruebas 1 minuto
-        //long refreshDurationMs = 7L * 24 * 60 * 60 * 1000; // producción: 7 días
-        // para pruebas locales puedes usar: 
-        //long refreshDurationMs = 60L * 1000; // 1
-        //long refreshDurationMs = 2L * 60 * 1000; // 2 minutos
-        long refreshDurationMs = 60L * 60 * 1000; // 1 hour
-
+        long refreshDurationMs = 60L * 60 * 1000; // 1 hora
         RefreshToken rt = refreshTokenService.createRefreshToken(user.getId(), refreshDurationMs);
 
         response.setRefreshToken(rt.getToken());
@@ -140,10 +130,6 @@ public class AuthController {
         // Generar nuevo accessToken usando el username correcto
         String newAccessToken = jwtTokenProvider.generateToken(user.getUsername());
 
-        // Opción: rotar el refresh token (recomendado) mismo tiempo que usaste en Login
-        //long refreshDurationMs = 7L * 24 * 60 * 60 * 1000;
-        //long refreshDurationMs = 60L * 1000; // 1 min
-        //long refreshDurationMs = 2L * 60 * 1000; // 2 minutos
         long refreshDurationMs = 60L * 60 * 1000; // 1 hour
 
         RefreshToken newRt = refreshTokenService.createRefreshToken(user.getId(), refreshDurationMs);

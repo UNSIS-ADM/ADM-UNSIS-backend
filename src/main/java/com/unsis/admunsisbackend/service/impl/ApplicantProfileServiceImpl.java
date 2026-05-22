@@ -12,19 +12,21 @@ import org.springframework.stereotype.Service;
 @Service
 public class ApplicantProfileServiceImpl implements ApplicantProfileService {
 
-    @Autowired private ApplicantRepository applicantRepo;
-    @Autowired private AdmissionResultRepository resultRepo;
+    @Autowired
+    private ApplicantRepository applicantRepo;
+    @Autowired
+    private AdmissionResultRepository resultRepo;
 
     @Override
     public ApplicantProfileDTO getMyProfile(String username) {
         // 1) Cargar el Applicant asociado al username
         Applicant applicant = applicantRepo.findByUser_Username(username)
-            .orElseThrow(() -> new RuntimeException("Aspirante no encontrado"));
-        
+                .orElseThrow(() -> new RuntimeException("Aspirante no encontrado"));
+
         // 2) Buscar su último resultado (si existe)
         AdmissionResult last = resultRepo
-            .findTopByApplicantOrderByCreatedAtDesc(applicant)
-            .orElse(null);
+                .findTopByApplicantOrderByCreatedAtDesc(applicant)
+                .orElse(null);
 
         // 3) Mapear al DTO
         ApplicantProfileDTO dto = new ApplicantProfileDTO();

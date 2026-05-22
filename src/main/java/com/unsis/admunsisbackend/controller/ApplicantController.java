@@ -11,22 +11,11 @@ import org.springframework.data.domain.Page;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
-
-
 @RestController
 @RequestMapping("/api/applicants") 
 public class ApplicantController {
     @Autowired
     private ApplicantService service;
-    
-
-/*
-    @GetMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
-    public ResponseEntity<List<ApplicantResponseDTO>> getAll(
-        @RequestParam(value = "year", required = false) Integer year) {
-        return ResponseEntity.ok(service.getAllApplicants(year));
-    }*/
 
     @GetMapping
 @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
@@ -70,9 +59,7 @@ public ResponseEntity<Page<ApplicantResponseDTO>> search(
     }
     
     @Autowired
-    private ApplicantService applicantService; // si tu service ahora expone markAttendance, o inyecta impl
-
-    // POST /api/applicants/{id}/attendance
+    private ApplicantService applicantService;
     @PostMapping("/{id}/attendance")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_USER')")
     public ApplicantResponseDTO markAttendance(
@@ -83,7 +70,6 @@ public ResponseEntity<Page<ApplicantResponseDTO>> search(
         String status = body.get("status"); // "ASISTIO" o "NP"
         String username = principal != null ? principal.getName() : null;
 
-        // Llama al service. Si tu ApplicantService interface necesita extender, llama al impl directamente
         return ((ApplicantServiceImpl) applicantService).markAttendance(id, status, username);
     }
 

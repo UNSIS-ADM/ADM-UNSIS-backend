@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.List;
 import java.util.Set;
 
-
 @Service
 public class UserServiceImpl implements UserService {
     @Autowired
@@ -155,7 +154,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponseDTO adminCreateOrUpdateUser(AdminUserUpdateDTO dto) {
-        if (dto == null) throw new IllegalArgumentException("DTO es null");
+        if (dto == null)
+            throw new IllegalArgumentException("DTO es null");
 
         User user;
         boolean creating = (dto.getId() == null);
@@ -180,7 +180,8 @@ public class UserServiceImpl implements UserService {
                 // verificar que no exista otro con ese username
                 Optional<User> byUsername = userRepository.findByUsername(dto.getUsername());
                 if (byUsername.isPresent() && !byUsername.get().getId().equals(user.getId())) {
-                    throw new RuntimeException("El username " + dto.getUsername() + " ya está en uso por otro usuario.");
+                    throw new RuntimeException(
+                            "El username " + dto.getUsername() + " ya está en uso por otro usuario.");
                 }
                 user.setUsername(dto.getUsername());
             }
@@ -219,12 +220,15 @@ public class UserServiceImpl implements UserService {
 
         // Si era creación, asegurarnos campos mínimos
         if (creating) {
-            // si no mandaron password, le ponemos un password temporal (recomendable: requerir password)
+            // si no mandaron password, le ponemos un password temporal (recomendable:
+            // requerir password)
             if (user.getPassword() == null) {
                 user.setPassword(passwordEncoder.encode("changeme"));
             }
-            if (user.getFullName() == null) user.setFullName(user.getUsername());
-            if (user.getActive() == null) user.setActive(true);
+            if (user.getFullName() == null)
+                user.setFullName(user.getUsername());
+            if (user.getActive() == null)
+                user.setActive(true);
             // si no mandaron roles, asignar ROLE_USER por defecto
             if (user.getRoles() == null || user.getRoles().isEmpty()) {
                 Role defaultRole = roleRepository.findByName("ROLE_USER")

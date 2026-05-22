@@ -26,15 +26,14 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
-            .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));        
-            if (Boolean.FALSE.equals(user.getActive())) {
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+        if (Boolean.FALSE.equals(user.getActive())) {
             throw new RuntimeException("Usuario desactivado. Contacte al administrador.");
         }
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Credenciales inválidas");
         }
-        
-        
+
         // Actualizar el campo lastLogin al momento actual
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
@@ -43,8 +42,7 @@ public class AuthServiceImpl implements AuthService {
         response.setUsername(user.getUsername());
         response.setFullName(user.getFullName());
         response.setRoles(
-        user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())
-        );
+                user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()));
 
         if (user.getApplicant() != null) {
             response.setCurp(user.getApplicant().getCurp());

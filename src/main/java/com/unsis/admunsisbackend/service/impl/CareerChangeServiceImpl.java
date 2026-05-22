@@ -7,7 +7,6 @@ import com.unsis.admunsisbackend.service.CareerChangeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -167,9 +166,11 @@ public class CareerChangeServiceImpl implements CareerChangeService {
                         - releasedDestino);
         vacNueva.setAvailableSlots(availableAfterDestino);
 
-        // --- 3) Si hay carrera origen y la acción es ACEPTADO, decrementar inscritos
-        // en origen
-        // y registrar el decremento en releasedCount (sin aumentar availableSlots) ---
+        /*
+         * 3) Si hay carrera origen y la acción es ACEPTADO, decrementar inscritos
+         * en origen y registrar el decremento en releasedCount (sin aumentar
+         * availableSlots)
+         */
         Vacancy vacOrigen = (oldCareer != null && !oldCareer.trim().isEmpty())
                 ? locked.get(oldCareer.trim())
                 : null;
@@ -191,10 +192,12 @@ public class CareerChangeServiceImpl implements CareerChangeService {
                 int prevReleased = Optional.ofNullable(vacOrigen.getReleasedCount()).orElse(0);
                 vacOrigen.setReleasedCount(prevReleased + 1);
 
-                // Recalcular available usando la fórmula que incluye released_count, de modo
-                // que
-                // la disminución de inscritos quede compensada por released_count y available
-                // no cambie.
+                /*
+                 * Recalcular available usando la fórmula que incluye released_count, de modo
+                 * que la disminución de inscritos quede compensada por released_count y
+                 * available
+                 * no cambié.
+                 */
                 int cuposOrig = Optional.ofNullable(vacOrigen.getCuposInserted()).orElse(0);
                 int reservedOrig = Optional.ofNullable(vacOrigen.getReservedCount()).orElse(0);
                 int releasedOrig = Optional.ofNullable(vacOrigen.getReleasedCount()).orElse(0);
@@ -213,9 +216,11 @@ public class CareerChangeServiceImpl implements CareerChangeService {
             app.setStatus("RECHAZADO");
             applicantRepo.save(app);
 
-            // Además de mantener el incremento en destino (policy actual),
-            // también decrementamos inscritos en la carrera origen y registramos
-            // released_count.
+            /*
+             * Además de mantener el incremento en destino (policy actual),
+             * también decrementamos inscritos en la carrera origen y registramos
+             * released_count.
+             */
             if (vacOrigen != null) {
                 int inscritosOrigNow = Optional.ofNullable(vacOrigen.getInscritosCount()).orElse(0);
                 vacOrigen.setInscritosCount(Math.max(0, inscritosOrigNow - 1));

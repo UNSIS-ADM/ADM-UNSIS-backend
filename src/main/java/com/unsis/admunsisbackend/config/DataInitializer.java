@@ -45,8 +45,6 @@ public class DataInitializer {
             // Guardar super admin en la base de datos
             userRepository.save(superAdmin);
             
-            // Confirmar creación exitosa por consola
-            // System.out.println("Super Admin creado exitosamente.");
         };
     }
 }

@@ -8,10 +8,8 @@ import com.unsis.admunsisbackend.repository.UserRepository;
 import com.unsis.admunsisbackend.repository.RoleRepository;
 import com.unsis.admunsisbackend.repository.ApplicantRepository;
 import com.unsis.admunsisbackend.service.ExcelService;
-
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,13 +17,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.transaction.Transactional;
-
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Pattern;
-
 import java.time.ZoneId;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -163,7 +159,6 @@ public class ExcelServiceImpl implements ExcelService {
             throw new RuntimeException("Carrera no válida");
         }
 
-    
         // Validar usuario existente por username (ficha)
         if (userRepository.existsByUsername(fichaStr)) {
             throw new RuntimeException("El usuario (ficha) ya está registrado: " + fichaStr);
@@ -173,7 +168,7 @@ public class ExcelServiceImpl implements ExcelService {
         if (applicantRepository.existsByCurp(curp)) {
             throw new RuntimeException("Ya existe un usuario con esta CURP");
         }
-    
+
         // Crear usuario
         User user = new User();
         user.setUsername(fichaStr); // login = ficha

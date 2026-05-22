@@ -106,7 +106,7 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                 }
             }
 
-            //Primera pasada: leer filas, cachear applicants y contadores por carrera
+            // Primera pasada: leer filas, cachear applicants y contadores por carrera
             Iterator<Row> it = sheet.rowIterator();
             it.next(); // saltar header
 
@@ -123,7 +123,8 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                     rd.comentario = row.getCell(4, MissingCellPolicy.CREATE_NULL_AS_BLANK).getStringCellValue().trim();
 
                     Cell scoreCell = row.getCell(5, MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                    //rd.rawScore = scoreCell.getCellType() == CellType.NUMERIC ? scoreCell.getNumericCellValue() : null;
+                    // rd.rawScore = scoreCell.getCellType() == CellType.NUMERIC ?
+                    // scoreCell.getNumericCellValue() : null;
                     rd.rawScore = parseNumericCell(scoreCell, rd.rowNum, errors);
 
                     // Calificación: columna índice 6
@@ -198,15 +199,15 @@ public class AdmissionResultServiceImpl implements AdmissionResultService {
                         boolean sameScore = Objects.equals(prev.getScore(), newScore);
 
                         boolean sameCareer = Objects.equals(applicant.getCareer(),
-                        applicant.getCareer());
+                                applicant.getCareer());
                         boolean sameCurp = Objects.equals(applicant.getCurp(), rd.curp);
                         boolean sameName = Objects.equals(applicant.getUser().getFullName(),
-                        applicant.getUser().getFullName());
+                                applicant.getUser().getFullName());
 
-                         if (sameCurp && sameName && sameCareer && sameStatus && sameComment &&
-                        sameScore) {
-                        // No hay cambios -> no hacemos nada
-                        continue;
+                        if (sameCurp && sameName && sameCareer && sameStatus && sameComment &&
+                                sameScore) {
+                            // No hay cambios -> no hacemos nada
+                            continue;
                         } else {
                             // Hay cambios -> actualizamos el registro existente
                             prev.setStatus(newStatus);

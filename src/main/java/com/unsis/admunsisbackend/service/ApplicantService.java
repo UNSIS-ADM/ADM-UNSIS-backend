@@ -8,8 +8,8 @@ import java.util.List;
 // Servicio para gestionar los postulantes.
 public interface ApplicantService {
     // Obtiene todos los postulantes para un año de admisión específico.
-        //List<ApplicantResponseDTO> getAllApplicants(Integer admissionYear);
-    
+    // List<ApplicantResponseDTO> getAllApplicants(Integer admissionYear);
+
     // Obtener aspirantes paginados
     Page<ApplicantResponseDTO> getAllApplicants(
             Integer admissionYear,
@@ -24,7 +24,7 @@ public interface ApplicantService {
             String search,
             int page,
             int size);
-    
+
     // Cambia la carrera de un postulante basado en su CURP.
     void changeCareerByCurp(
             String curp,
@@ -35,10 +35,10 @@ public interface ApplicantService {
 
     // Actualiza un postulante por un administrador.
     ApplicantResponseDTO updateApplicantByAdmin(
-        Long id,
-        ApplicantAdminUpdateDTO dto,
-        String adminUsername);
-    
+            Long id,
+            ApplicantAdminUpdateDTO dto,
+            String adminUsername);
+
     List<String> getAllCareers();
 
 }

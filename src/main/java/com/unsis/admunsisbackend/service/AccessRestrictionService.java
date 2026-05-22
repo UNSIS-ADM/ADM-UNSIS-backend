@@ -6,9 +6,9 @@ import com.unsis.admunsisbackend.model.AccessRestriction;
 public interface AccessRestrictionService {
     // Verifica si el acceso está permitido para un rol dado.
     boolean isAccessAllowed(String roleName);
-    
+
     /*
-     * Verifica si el acceso está permitido para el ROLE_APPLICANT según la 
+     * Verifica si el acceso está permitido para el ROLE_APPLICANT según la
      * regla almacenada.
      */
     AccessRestriction getRestriction();

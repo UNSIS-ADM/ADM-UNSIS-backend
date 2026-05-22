@@ -7,9 +7,10 @@ import java.util.List;
 
 // Servicio para gestionar los resultados de admisión.
 public interface AdmissionResultService {
-    // Procesa un archivo Excel con los resultados de admisión para un año específico.
+    // Procesa un archivo Excel con los resultados de admisión para un año
+    // específico.
     ExcelUploadResponse processResultsExcel(MultipartFile file, Integer admissionYear);
-    
+
     // Obtiene todos los resultados de admisión.
     List<AdmissionResultDTO> getAllResults();
 }

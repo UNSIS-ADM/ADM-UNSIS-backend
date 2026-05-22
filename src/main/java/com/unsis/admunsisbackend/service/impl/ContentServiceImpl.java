@@ -27,7 +27,7 @@ public class ContentServiceImpl implements ContentService {
     private final VacancyRepository vacancyRepo;
     private final UserRepository userRepository;
 
-    //Keys permitidas y sus partes (inmutables)
+    // Keys permitidas y sus partes (inmutables)
     private static final Map<String, List<String>> ALLOWED_PART_KEYS_BY_CONTENT = Map.of(
             "mensaje_aceptado",
             List.of("greeting", "welcome_note", "inscription_dates", "survey", "documents_list", "note", "start_date",
@@ -81,7 +81,8 @@ public class ContentServiceImpl implements ContentService {
                 vacs.stream()
                         .filter(v -> v.getAvailableSlots() > 0)
                         .filter(v -> !v.getCareer().equalsIgnoreCase("LICENCIATURA EN MEDICINA"))
-                        .filter(v -> !v.getCareer().equalsIgnoreCase(carreraAspirante)) //Excluir la carrear del aspirante
+                        .filter(v -> !v.getCareer().equalsIgnoreCase(carreraAspirante)) // Excluir la carrear del
+                                                                                        // aspirante
                         .map(v -> "<li>" + v.getCareer() + "</li>")
                         .collect(Collectors.joining())
                 + "</ul>";

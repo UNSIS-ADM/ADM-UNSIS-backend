@@ -9,8 +9,11 @@ import com.unsis.admunsisbackend.dto.AdminUserUpdateDTO;
 
 public interface UserService {
     List<UserResponseDTO> getAllUsers();
+
     ApplicantResponseDTO getApplicantProfile(String username);
-    // Crea/actualiza el User asociado al Applicant: username = ficha, password = bcrypt(curp)
+
+    // Crea/actualiza el User asociado al Applicant: username = ficha, password =
+    // bcrypt(curp)
     void syncUserCredentialsForApplicant(Applicant applicant);
 
     UserResponseDTO adminCreateOrUpdateUser(AdminUserUpdateDTO dto);

@@ -6,9 +6,10 @@ import java.util.List;
 
 public interface ContentService {
     ContentDTO getByKey(String keyName);
+
     List<ContentDTO> listAll();
+
     ContentPartDTO upsertPart(String keyName, String partKey, ContentPartDTO dto);
+
     ContentDTO upsertParts(String keyName, List<ContentPartDTO> parts);
 }
-
-

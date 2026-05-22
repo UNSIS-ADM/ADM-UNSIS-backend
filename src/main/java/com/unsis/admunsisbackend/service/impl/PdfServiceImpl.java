@@ -4,17 +4,14 @@ import com.unsis.admunsisbackend.dto.PdfResponse;
 import com.unsis.admunsisbackend.model.Applicant;
 import com.unsis.admunsisbackend.repository.ApplicantRepository;
 import com.unsis.admunsisbackend.service.PdfService;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
-
 // Imports para iText (PDF)
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
-
 // Imports para Apache POI (Excel)
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -25,14 +22,15 @@ import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFColor; // 👈 Importante para colores personalizados en Excel
+import org.apache.poi.xssf.usermodel.XSSFColor;
 
 import java.io.ByteArrayOutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * Servicio para generar reportes unificados (PDF + Excel) en un ZIP con colores institucionales.
+ * Servicio para generar reportes unificados (PDF + Excel) en un ZIP con colores
+ * institucionales.
  */
 @Service
 public class PdfServiceImpl implements PdfService {
@@ -57,7 +55,8 @@ public class PdfServiceImpl implements PdfService {
             PdfWriter.getInstance(document, baosPdf);
             document.open();
 
-            com.itextpdf.text.Font titleFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 16, com.itextpdf.text.Font.BOLD);
+            com.itextpdf.text.Font titleFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA,
+                    16, com.itextpdf.text.Font.BOLD);
             Paragraph title = new Paragraph("Reporte de Aspirantes - UNSIS", titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             title.setSpacingAfter(20f);
@@ -72,8 +71,8 @@ public class PdfServiceImpl implements PdfService {
                 table.setSpacingAfter(10f);
                 table.setHeaderRows(1);
 
-                addTableHeader(table, new String[]{
-                    "Ficha", "Nombre completo", "CURP", "Carrera", "Lugar", "Estado", "Asistió"
+                addTableHeader(table, new String[] {
+                        "Ficha", "Nombre completo", "CURP", "Carrera", "Lugar", "Estado", "Asistió"
                 });
 
                 for (Applicant a : applicants) {
@@ -89,10 +88,10 @@ public class PdfServiceImpl implements PdfService {
             }
 
             Paragraph footer = new Paragraph(
-                "Generado automáticamente el " +
-                java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
-                new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 8, com.itextpdf.text.Font.ITALIC)
-            );
+                    "Generado automáticamente el " +
+                            java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                    new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 8,
+                            com.itextpdf.text.Font.ITALIC));
             footer.setAlignment(Element.ALIGN_RIGHT);
             document.add(footer);
 
@@ -104,7 +103,8 @@ public class PdfServiceImpl implements PdfService {
         }
 
         // --- GENERACIÓN DEL EXCEL ---
-        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream baosExcel = new ByteArrayOutputStream()) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook();
+                ByteArrayOutputStream baosExcel = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Aspirantes");
 
             org.apache.poi.ss.usermodel.Font headerFont = workbook.createFont();
@@ -115,15 +115,15 @@ public class PdfServiceImpl implements PdfService {
             headerCellStyle.setFont(headerFont);
 
             // Convertimos el color hexadecimal #6a1b1b a bytes para Apache POI
-            byte[] rgbGunder = new byte[]{(byte) 106, (byte) 27, (byte) 27};
+            byte[] rgbGunder = new byte[] { (byte) 106, (byte) 27, (byte) 27 };
             XSSFColor customColor = new XSSFColor(rgbGunder, null);
-            
+
             headerCellStyle.setFillForegroundColor(customColor);
             headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             headerCellStyle.setAlignment(HorizontalAlignment.CENTER);
 
             // Crear Fila de Encabezados
-            String[] columns = {"Ficha", "Nombre completo", "CURP", "Carrera", "Lugar", "Estado", "Asistió"};
+            String[] columns = { "Ficha", "Nombre completo", "CURP", "Carrera", "Lugar", "Estado", "Asistió" };
             Row headerRow = sheet.createRow(0);
             for (int i = 0; i < columns.length; i++) {
                 Cell cell = headerRow.createCell(i);
@@ -160,9 +160,9 @@ public class PdfServiceImpl implements PdfService {
         if (pdfBytes != null && excelBytes != null) {
             response.setSuccess(true);
             response.setMessage("Reportes PDF y Excel empaquetados con éxito.");
-            response.setPdfBytes(pdfBytes);     
-            response.setExcelBytes(excelBytes); 
-            
+            response.setPdfBytes(pdfBytes);
+            response.setExcelBytes(excelBytes);
+
             response.setFileBytes(pdfBytes);
             response.setFileName("reportes_admision.zip");
         } else {
@@ -174,8 +174,9 @@ public class PdfServiceImpl implements PdfService {
     }
 
     private void addTableHeader(PdfPTable table, String[] headers) {
-        com.itextpdf.text.Font headerFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 10, com.itextpdf.text.Font.BOLD, BaseColor.WHITE);
-        
+        com.itextpdf.text.Font headerFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 10,
+                com.itextpdf.text.Font.BOLD, BaseColor.WHITE);
+
         // 106, 27, 27 equivalen al hexadecimal #6A1B1B en RGB
         BaseColor headerColor = new BaseColor(106, 27, 27);
 

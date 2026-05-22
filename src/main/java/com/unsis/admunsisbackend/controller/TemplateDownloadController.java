@@ -21,8 +21,8 @@ public class TemplateDownloadController {
     private static final Logger logger = LoggerFactory.getLogger(TemplateDownloadController.class);
 
     private static final Map<String, String> AVAILABLE = Map.of(
-        "aspirantes", "templates_files/Datos de aspirantes.xlsx",
-        "resultados", "templates_files/Resultados de admisión.xlsx");
+        "aspirantes", "templates_files/aspirantes.xlsx",
+        "resultados", "templates_files/Resultados.xlsx");
 
     private static final MediaType XLSX_MEDIA_TYPE = MediaType.parseMediaType(
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");

@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class ApplicantAdminUpdateDTO {
 
     @Min(1)
-    private Long ficha;
+    private String ficha;
 
     @Pattern(regexp = "^[A-Z0-9]{18}$", message = "CURP inválida (18 caracteres, mayúsculas y números)")
     private String curp;
@@ -48,11 +48,11 @@ public class ApplicantAdminUpdateDTO {
     private BigDecimal score;
 
     // getters y setters
-    public Long getFicha() {
+    public String getFicha() {
         return ficha;
     }
 
-    public void setFicha(Long ficha) {
+    public void setFicha(String ficha) {
         this.ficha = ficha;
     }
 

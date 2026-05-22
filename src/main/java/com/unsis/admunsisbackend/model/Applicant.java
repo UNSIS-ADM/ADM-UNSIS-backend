@@ -24,7 +24,7 @@ public class Applicant {
     private User user;
 
     @Column(nullable = false)
-    private Long ficha; 
+    private String ficha;
 
     @Column(nullable = false)
     private String curp;
@@ -75,11 +75,11 @@ public class Applicant {
         this.id = id;
     }
 
-    public Long getFicha() {
+    public String getFicha() {
         return ficha;
     }
 
-    public void setFicha(Long ficha) {
+    public void setFicha(String ficha) {
         this.ficha = ficha;
     }
 

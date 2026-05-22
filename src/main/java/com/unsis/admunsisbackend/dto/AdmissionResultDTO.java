@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 /* Objeto de transferencia de datos para resultados de admisión */
 public class AdmissionResultDTO {
     private Long id;
-    private long ficha;
+    private String ficha;
     private Long applicantId;
     private String careerAtResult;
     private String fullName;
@@ -29,11 +29,11 @@ public class AdmissionResultDTO {
         this.id = id;
     }
 
-    public Long getFicha() {
+    public String getFicha() {
         return ficha;
     }
 
-    public void setFicha(Long ficha) {
+    public void setFicha(String ficha) {
         this.ficha = ficha;
     }
 

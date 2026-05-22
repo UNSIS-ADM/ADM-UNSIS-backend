@@ -138,14 +138,18 @@ public class ExcelServiceImpl implements ExcelService {
 
     @Transactional
     private void processRow(Row row, Role applicantRole) {
-        // Ficha primero (necesaria para la validación de username)
-        Long fichaExcel;
+        String fichaStr;
+
         try {
-            fichaExcel = Long.valueOf(getCellValue(row.getCell(0)));
+            fichaStr = getCellValue(row.getCell(0)).trim();
+
+            if (fichaStr.isBlank()) {
+                throw new RuntimeException();
+            }
+
         } catch (Exception e) {
             throw new RuntimeException("Número de ficha inválido");
         }
-        String fichaStr = fichaExcel.toString();
 
         // Validar CURP
         String curp = getCellValue(row.getCell(3));
@@ -159,12 +163,7 @@ public class ExcelServiceImpl implements ExcelService {
             throw new RuntimeException("Carrera no válida");
         }
 
-        /*
-         * Validar usuario existente no exista ya por CURP
-         * if (userRepository.existsByUsername(curp)) {
-         * throw new RuntimeException("El usuario con CURP ya está registrado");
-         * }
-         */
+    
         // Validar usuario existente por username (ficha)
         if (userRepository.existsByUsername(fichaStr)) {
             throw new RuntimeException("El usuario (ficha) ya está registrado: " + fichaStr);
@@ -174,27 +173,7 @@ public class ExcelServiceImpl implements ExcelService {
         if (applicantRepository.existsByCurp(curp)) {
             throw new RuntimeException("Ya existe un usuario con esta CURP");
         }
-        /*
-         * Long fichaExcel = Long.valueOf(getCellValue(row.getCell(0)));
-         * String fichaStr = fichaExcel.toString();
-         */
-        /*
-         * // ** INTEGRACIÓN DE VALIDACIÓN DE VACANTES: **
-         * int currentYear = Year.now().getValue();
-         * long inscritos = applicantRepository.countByCareerAndAdmissionYear(career,
-         * currentYear);
-         * 
-         * var vac = vacancyRepository
-         * .findByCareerAndAdmissionYear(career, currentYear)
-         * .orElseThrow(
-         * () -> new RuntimeException("Vacantes no configuradas para " + career + " en "
-         * + currentYear));
-         * 
-         * if (inscritos >= vac.getLimitCount()) {
-         * throw new RuntimeException("Cupo agotado para " + career);
-         * }
-         * // ** fin de la integración **
-         */
+    
         // Crear usuario
         User user = new User();
         user.setUsername(fichaStr); // login = ficha
@@ -257,7 +236,7 @@ public class ExcelServiceImpl implements ExcelService {
         // Crear aspirante
         Applicant applicant = new Applicant();
         applicant.setUser(user);
-        applicant.setFicha(fichaExcel);
+        applicant.setFicha(fichaStr);
         applicant.setCurp(curp);
         applicant.setCareer(career);
         applicant.setLocation(getCellValue(row.getCell(4)));

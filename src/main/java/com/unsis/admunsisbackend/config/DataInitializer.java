@@ -35,7 +35,7 @@ public class DataInitializer {
                         return roleRepository.save(role);
                     });
 
-            // Crear super admin si no existe
+            // Crear super admin si no existe       
             User superAdmin = new User();
             superAdmin.setUsername("administrador");
             superAdmin.setPassword(passwordEncoder.encode("ADM-ASPIRANTES")); // Pass encriptada
